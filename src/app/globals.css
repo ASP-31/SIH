@@ -1,26 +1,111 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #FCFAF6;
+  --foreground: #18181B;
+  --card: #FFFFFF;
+  --card-foreground: #18181B;
+  --accent: #F7F3EB;
+  --accent-foreground: #18181B;
+  --muted: #71717A;
+  --border: #E5E5E0;
+  --input: #E5E5E0;
+  --ring: #EA580C;
+
+  /* Subtle National & Saffron/Kesar Palette */
+  --saffron: #FF9933;
+  --saffron-deep: #EA580C;
+  --saffron-light: #FFF7ED;
+  --saffron-border: #FDBA74;
+  --india-green: #138808;
+  --ashoka-blue: #0B2545;
+  
+  --font-geist-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Helvetica, Arial, sans-serif;
+  --font-geist-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-accent: var(--accent);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  border-color: var(--border);
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-image: 
+    radial-gradient(rgba(234, 88, 12, 0.035) 1px, transparent 1px),
+    radial-gradient(rgba(24, 24, 27, 0.02) 1px, transparent 1px);
+  background-size: 32px 32px, 16px 16px;
+  background-position: 0 0, 16px 16px;
 }
+
+/* Subtle elevation and card effects */
+.shadow-subtle {
+  box-shadow: 0 1px 3px rgba(24, 24, 27, 0.04), 0 4px 12px rgba(24, 24, 27, 0.03);
+}
+
+.shadow-elevated {
+  box-shadow: 0 4px 20px rgba(24, 24, 27, 0.06), 0 1px 3px rgba(24, 24, 27, 0.03);
+}
+
+.shadow-saffron {
+  box-shadow: 4px 4px 0px 0px #EA580C;
+}
+
+.shadow-ink {
+  box-shadow: 4px 4px 0px 0px #18181B;
+}
+
+/* Minimalist Indian Geometric Micro-Grid */
+.bg-minimal-jaali {
+  background-color: #FCFAF6;
+  background-image: radial-gradient(circle at 1px 1px, rgba(234, 88, 12, 0.07) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+.bg-saffron-gradient {
+  background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 50%, #FED7AA 100%);
+}
+
+.bg-tricolor-line {
+  background: linear-gradient(90deg, #FF9933 0%, #FFFFFF 50%, #138808 100%);
+}
+
+/* Hide scrollbars while retaining touch scrolling */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Smooth fade in */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
