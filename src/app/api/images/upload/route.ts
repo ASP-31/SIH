@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
+import fs from 'fs/promises';
+import path from 'path';
 
 export const runtime = 'nodejs';
 
@@ -19,7 +21,7 @@ if (cloudName && apiKey && apiSecret) {
 
 /**
  * POST /api/images/upload
- * Real Cloudinary Image Upload & AI E-Commerce Enhancement
+ * Cloudinary Cloud Upload & Local Disk Storage Fallback
  */
 export async function POST(request: NextRequest) {
   try {
@@ -53,7 +55,7 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // If Cloudinary credentials are fully configured, upload directly to Cloudinary
+    // 1. If Cloudinary credentials are configured, upload directly to Cloudinary
     if (cloudName && apiKey && apiSecret) {
       const uploadPromise = new Promise<any>((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
@@ -75,11 +77,11 @@ export async function POST(request: NextRequest) {
       const publicId = uploadResult.public_id;
       const originalImageUrl = uploadResult.secure_url;
 
-      // Generate the AI-Enhanced URL with real Cloudinary transformations:
-      // 1. e_improve: auto-adjust lighting, saturation, and contrast
+      // Generate the AI-Enhanced URL with Cloudinary transformations:
+      // 1. e_improve: auto-adjust lighting, saturation, contrast
       // 2. e_sharpen:80: reveal authentic fabric thread texture & artisan stitches
-      // 3. b_white,c_pad,w_1200,h_1200,ar_1:1: clean professional e-commerce product staging
-      // 4. f_auto,q_auto: best format & quality optimization for buyer browsing
+      // 3. b_white,c_pad,w_1200,h_1200,ar_1:1: clean professional product staging
+      // 4. f_auto,q_auto: best format & quality optimization
       const enhancedImageUrl = cloudinary.url(publicId, {
         transformation: [
           { effect: 'improve' },
@@ -92,6 +94,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
+        storageMode: 'cloudinary_cloud',
         cloudinaryPublicId: publicId,
         originalImageUrl,
         enhancedImageUrl,
@@ -102,22 +105,46 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Fallback if Cloudinary credentials are not yet set in .env.local:
-    // Convert to base64 data URL so artisan can preview and test the complete UI workflow
-    console.warn('Cloudinary credentials missing in .env.local. Falling back to local data URL.');
-    const base64Data = `data:${file.type};base64,${buffer.toString('base64')}`;
+    // 2. Fallback: Save directly to local filesystem in public/uploads/
+    // This allows artisans to upload real pictures and serve them immediately without external API keys
+    try {
+      const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
+      await fs.mkdir(uploadsDir, { recursive: true });
 
-    return NextResponse.json({
-      success: true,
-      warning: 'CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET are not set in .env.local. Using local image representation for demonstration.',
-      cloudinaryPublicId: `local_${Date.now()}`,
-      originalImageUrl: base64Data,
-      enhancedImageUrl: base64Data, // In production with Cloudinary, this has e_improve, e_sharpen, b_white
-      width: 1000,
-      height: 1000,
-      format: file.type.split('/')[1] || 'jpeg',
-      bytes: file.size,
-    });
+      const rawExt = file.type.split('/')[1] || 'jpg';
+      const cleanExt = rawExt.replace('jpeg', 'jpg').replace('svg+xml', 'svg');
+      const filename = `tote_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${cleanExt}`;
+      const filePath = path.join(uploadsDir, filename);
+
+      await fs.writeFile(filePath, buffer);
+      const localUrl = `/uploads/${filename}`;
+
+      return NextResponse.json({
+        success: true,
+        storageMode: 'local_disk',
+        cloudinaryPublicId: filename,
+        originalImageUrl: localUrl,
+        enhancedImageUrl: localUrl,
+        width: 1200,
+        height: 1200,
+        format: cleanExt,
+        bytes: file.size,
+      });
+    } catch (fsErr) {
+      // Fallback 3: In-memory base64 data URL
+      const base64Data = `data:${file.type};base64,${buffer.toString('base64')}`;
+      return NextResponse.json({
+        success: true,
+        storageMode: 'base64_fallback',
+        cloudinaryPublicId: `local_${Date.now()}`,
+        originalImageUrl: base64Data,
+        enhancedImageUrl: base64Data,
+        width: 1000,
+        height: 1000,
+        format: file.type.split('/')[1] || 'jpeg',
+        bytes: file.size,
+      });
+    }
   } catch (error: any) {
     console.error('Image upload route error:', error);
     return NextResponse.json(
