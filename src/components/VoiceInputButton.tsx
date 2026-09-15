@@ -33,21 +33,27 @@ const LANGUAGES: LanguageOption[] = [
 interface VoiceInputButtonProps {
   onTranscription: (text: string) => void;
   onProductGenerated?: (productData: any) => void;
+  onAudioReady?: (audioUrl: string | null, language: string) => void;
   currentValue?: string;
+  initialAudioUrl?: string;
 }
 
 export function VoiceInputButton({
   onTranscription,
   onProductGenerated,
+  onAudioReady,
   currentValue = '',
+  initialAudioUrl = '',
 }: VoiceInputButtonProps) {
   const [selectedLang, setSelectedLang] = useState<SupportedLanguage>('ml');
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [isUploadingAudio, setIsUploadingAudio] = useState(false);
   const [isGeneratingCatalog, setIsGeneratingCatalog] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [lastTranscribedText, setLastTranscribedText] = useState<string>('');
+  const [savedAudioUrl, setSavedAudioUrl] = useState<string>(initialAudioUrl);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -111,7 +117,10 @@ export function VoiceInputButton({
           return;
         }
 
-        await sendAudioToBackend(audioBlob);
+        await Promise.all([
+          sendAudioToBackend(audioBlob),
+          uploadAudioForPlayback(audioBlob),
+        ]);
       };
 
       mediaRecorder.start(250); // Collect data every 250ms
@@ -167,7 +176,6 @@ export function VoiceInputButton({
   const sendAudioToBackend = async (audioBlob: Blob) => {
     setIsTranscribing(true);
     setErrorMessage(null);
-
     try {
       const formData = new FormData();
       formData.append('file', audioBlob, 'recording.webm');
@@ -200,6 +208,44 @@ export function VoiceInputButton({
     } finally {
       setIsTranscribing(false);
     }
+  };
+
+  const uploadAudioForPlayback = async (audioBlob: Blob) => {
+    if (!onAudioReady) return;
+    setIsUploadingAudio(true);
+    setErrorMessage(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', audioBlob, 'narration.webm');
+
+      const res = await fetch('/api/audio/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success && data.audioUrl) {
+        setSavedAudioUrl(data.audioUrl);
+        onAudioReady(data.audioUrl, selectedLang);
+      } else {
+        setSavedAudioUrl('');
+        onAudioReady(null, selectedLang);
+        setErrorMessage(data.error || 'Could not save the voice narration audio.');
+      }
+    } catch (err: any) {
+      console.error('Audio upload network error:', err);
+      setErrorMessage(`Network error while saving narration: ${err.message}`);
+      onAudioReady(null, selectedLang);
+    } finally {
+      setIsUploadingAudio(false);
+    }
+  };
+
+  const removeSavedAudio = () => {
+    setSavedAudioUrl('');
+    if (onAudioReady) onAudioReady(null, selectedLang);
   };
 
   const handleAiAutoFill = async () => {
@@ -306,6 +352,42 @@ export function VoiceInputButton({
           )}
         </div>
       </div>
+
+      {/* Saved Voice Narration Preview (uploaded for buyer playback) */}
+      {(savedAudioUrl || isUploadingAudio) && (
+        <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-2 min-w-0">
+            {isUploadingAudio ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-700 shrink-0" />
+                <span className="text-emerald-950 font-semibold text-[11px]">
+                  Saving narration audio...
+                </span>
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                <span className="text-emerald-950 font-semibold text-[11px]">
+                  Voice narration saved for buyers to hear
+                </span>
+              </>
+            )}
+          </div>
+          {savedAudioUrl && !isUploadingAudio && (
+            <div className="flex items-center gap-2">
+              <audio controls src={savedAudioUrl} className="h-8 w-36 sm:w-48" />
+              <button
+                type="button"
+                onClick={removeSavedAudio}
+                className="p-1 rounded-lg text-[#71717A] hover:bg-emerald-100 hover:text-emerald-900 transition-colors"
+                title="Remove narration audio"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* AI Catalog Auto-Fill Trigger Banner (shown once transcription exists) */}
       {(lastTranscribedText || currentValue.length > 15) && !isRecording && !isTranscribing && (

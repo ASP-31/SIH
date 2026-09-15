@@ -14,6 +14,7 @@ import {
   Zap,
   Plus,
   Minus,
+  Volume2,
 } from 'lucide-react';
 import { useCartStore } from '@/hooks/useCartStore';
 import { useToastStore } from '@/hooks/useToastStore';
@@ -150,6 +151,27 @@ export function QuickViewModal() {
             <p className="mt-3 text-xs sm:text-sm text-[#71717A] leading-relaxed">
               {product.description}
             </p>
+
+            {/* Artisan Voice Narration Player (originally recorded in seller's native language) */}
+            {product.audio_story_url && (
+              <div className="mt-4 p-4 rounded-2xl bg-amber-50/70 border border-amber-200">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                    <Volume2 className="w-4 h-4 text-amber-700" />
+                    Hear the Artisan's Own Words
+                  </span>
+                  {product.audio_story_title && (
+                    <span className="text-[10px] font-semibold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300">
+                      {product.audio_story_title}
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-amber-900/80 mb-2">
+                  Spoken by the artisan in their native language. Text is auto-translated to your chosen site language.
+                </p>
+                <audio controls src={product.audio_story_url} className="w-full h-10" />
+              </div>
+            )}
 
             {/* Specifications Grid */}
             <div className="mt-4 p-3.5 rounded-2xl bg-[#F2F0EB]/60 border border-[#E5E5E0] space-y-2 text-xs">
