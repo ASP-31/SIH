@@ -156,6 +156,8 @@ export default function SellerDashboardPage() {
     originalImageUrl: '',
     enhancedImageUrl: '',
     cloudinaryPublicId: '',
+    audioUrl: '',
+    audioLang: '',
   });
 
   const loadData = () => {
@@ -437,6 +439,8 @@ export default function SellerDashboardPage() {
               enhanced_image_url: productForm.enhancedImageUrl || p.enhanced_image_url || productForm.imageUrl,
               cloudinary_public_id: productForm.cloudinaryPublicId || p.cloudinary_public_id || '',
               selected_image_url: productForm.imageUrl,
+              audio_story_url: productForm.audioUrl || p.audio_story_url || '',
+              audio_story_title: productForm.audioLang || p.audio_story_title || '',
               is_active: Number(productForm.stock) > 0,
             }
           : p
@@ -466,6 +470,8 @@ export default function SellerDashboardPage() {
         enhanced_image_url: productForm.enhancedImageUrl || productForm.imageUrl,
         cloudinary_public_id: productForm.cloudinaryPublicId || '',
         selected_image_url: productForm.imageUrl,
+        audio_story_url: productForm.audioUrl || undefined,
+        audio_story_title: productForm.audioLang || undefined,
         is_active: Number(productForm.stock) > 0,
         rating: 5.0,
         reviews_count: 0,
@@ -497,6 +503,8 @@ export default function SellerDashboardPage() {
       originalImageUrl: prod.original_image_url || prod.images[0] || '',
       enhancedImageUrl: prod.enhanced_image_url || prod.images[0] || '',
       cloudinaryPublicId: prod.cloudinary_public_id || '',
+      audioUrl: prod.audio_story_url || '',
+      audioLang: prod.audio_story_title || '',
     });
     setIsProductModalOpen(true);
   };
@@ -672,6 +680,8 @@ export default function SellerDashboardPage() {
                   originalImageUrl: '',
                   enhancedImageUrl: '',
                   cloudinaryPublicId: '',
+                  audioUrl: '',
+                  audioLang: '',
                 });
                 setIsProductModalOpen(true);
               }}
@@ -1973,6 +1983,8 @@ export default function SellerDashboardPage() {
                     originalImageUrl: '',
                     enhancedImageUrl: '',
                     cloudinaryPublicId: '',
+                    audioUrl: '',
+                    audioLang: '',
                   });
                   setIsProductModalOpen(true);
                 }}
@@ -2396,6 +2408,8 @@ export default function SellerDashboardPage() {
                         originalImageUrl: '',
                         enhancedImageUrl: '',
                         cloudinaryPublicId: '',
+                        audioUrl: '',
+                        audioLang: '',
                       });
                       setIsVoiceAssistantOpen(false);
                       setIsProductModalOpen(true);
@@ -2534,6 +2548,8 @@ export default function SellerDashboardPage() {
                     originalImageUrl: '',
                     enhancedImageUrl: '',
                     cloudinaryPublicId: '',
+                    audioUrl: '',
+                    audioLang: '',
                   });
                   setIsAiStudioOpen(false);
                   setIsProductModalOpen(true);
@@ -2869,6 +2885,14 @@ export default function SellerDashboardPage() {
                 {/* Real Voice Input & Vernacular Speech-to-Text Component */}
                 <VoiceInputButton
                   currentValue={productForm.description}
+                  initialAudioUrl={productForm.audioUrl}
+                  onAudioReady={(audioUrl, lang) => {
+                    setProductForm((prev) => ({
+                      ...prev,
+                      audioUrl: audioUrl || '',
+                      audioLang: lang || '',
+                    }));
+                  }}
                   onTranscription={(text) => {
                     setProductForm((prev) => ({
                       ...prev,

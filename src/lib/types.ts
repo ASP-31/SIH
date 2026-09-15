@@ -120,6 +120,7 @@ export interface Product {
   craft_story?: string;
   loom_heritage?: string;
   audio_story_title?: string;
+  audio_story_url?: string;
   is_gi_tagged?: boolean;
   care_instructions?: string;
   // B2B & Government Marketplace Specs

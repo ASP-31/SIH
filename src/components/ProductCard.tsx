@@ -3,7 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Plus, Eye, ShieldCheck, Building2 } from 'lucide-react';
+import { Plus, Eye, ShieldCheck, Building2, Volume2 } from 'lucide-react';
 import { Product } from '@/lib/types';
 import { formatINR } from '@/lib/demoData';
 import { useCartStore } from '@/hooks/useCartStore';
@@ -113,6 +113,26 @@ export function ProductCard({ product }: ProductCardProps) {
           </p>
           <p className="truncate text-[11px] text-[#71717A]">{product.material}</p>
         </div>
+
+        {/* Artisan Voice Narration (recorded in the seller's native language) */}
+        {product.audio_story_url && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              openQuickView(product);
+            }}
+            className="inline-flex items-center gap-1 text-[10px] font-mono font-bold uppercase px-2 py-1 border border-[#18181B] bg-amber-50 text-amber-900 hover:bg-amber-100 transition-colors"
+          >
+            <Volume2 className="w-3 h-3" />
+            <span>♪ Hear the Artisan</span>
+            {product.audio_story_title && (
+              <span className="text-[9px] font-mono font-bold text-amber-800 bg-amber-100 px-1 py-0.5 border border-amber-300">
+                {product.audio_story_title}
+              </span>
+            )}
+          </button>
+        )}
 
         {/* B2B Wholesale MOQ Callout Block */}
         {firstMoq && (
