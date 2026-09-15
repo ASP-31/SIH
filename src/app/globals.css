@@ -109,3 +109,92 @@ body {
   animation: fadeIn 0.2s ease-out forwards;
 }
 
+/* Google Translate Widget Styling */
+#google_translate_element {
+  font-family: var(--font-geist-mono), monospace;
+  display: flex;
+  align-items: center;
+}
+
+#google_translate_element .goog-te-gadget-simple {
+  border: 2px solid #18181B !important;
+  background: #FAFAF8 !important;
+  padding: 6px 12px !important;
+  font-size: 12px !important;
+  font-family: var(--font-geist-mono), monospace !important;
+  white-space: nowrap;
+  display: inline-block;
+  vertical-align: middle;
+  height: 32px;
+  line-height: 18px;
+  box-sizing: border-box;
+}
+
+#google_translate_element .goog-te-menu-value {
+  color: #18181B !important;
+  text-decoration: none;
+  font-family: var(--font-geist-mono), monospace !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  cursor: pointer;
+}
+
+#google_translate_element .goog-te-gadget-icon {
+  display: none;
+}
+
+/* Hide "Powered by Google" branding */
+#google_translate_element .goog-te-gadget {
+  font-size: 0 !important;
+  color: transparent !important;
+}
+
+/* Hide the translated-text hover tooltip */
+#goog-gt-tt,
+.goog-tooltip,
+.goog-tooltip:hover {
+  display: none !important;
+}
+
+/* Hide loading spinner */
+.goog-te-spinner-pos,
+.goog-te-spinner-box,
+.goog-te-spinner {
+  display: none !important;
+}
+
+/* Force-hide the top translation banner iframe */
+iframe.goog-te-banner-frame,
+.goog-te-banner-frame.skiptranslate {
+  display: none !important;
+  height: 0 !important;
+}
+
+body {
+  top: 0 !important;
+}
+
+/* Style the language popup menu */
+.goog-menu {
+  font-family: var(--font-geist-mono), monospace !important;
+  border: 2px solid #18181B !important;
+  box-shadow: 4px 4px 0px 0px #18181B !important;
+  border-radius: 0 !important;
+}
+
+.goog-menuitem {
+  font-family: var(--font-geist-mono), monospace !important;
+  font-size: 12px !important;
+  color: #18181B !important;
+  padding: 8px 16px !important;
+}
+
+.goog-menuitem:hover {
+  background: #FAFAF8 !important;
+}
+
+.goog-menuitem-highlight {
+  background: #F7F3EB !important;
+}
+

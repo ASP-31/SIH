@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -31,6 +32,22 @@ export default function RootLayout({
       className="h-full antialiased font-sans bg-[#FAFAF8]"
       suppressHydrationWarning
     >
+      <Script
+        src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
+        strategy="afterInteractive"
+      />
+      <Script id="google-translate-init" strategy="afterInteractive">
+        {`
+          function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+              pageLanguage: 'en',
+              includedLanguages: 'en,hi,bn,ta,te,mr,gu,kn,ml,pa,or,as',
+              layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+              autoDisplay: false
+            }, 'google_translate_element');
+          }
+        `}
+      </Script>
       <body className="min-h-full flex flex-col bg-[#FAFAF8] text-[#18181B] selection:bg-[#F2F0EB] selection:text-[#18181B]" suppressHydrationWarning>
         <Navbar />
         <main className="flex-1 pb-16 md:pb-0">{children}</main>

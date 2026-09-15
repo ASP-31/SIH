@@ -380,6 +380,9 @@ export function Navbar() {
 
             {/* Right: Actions, Notifications, Role Switcher, Cart */}
             <div className="flex items-center gap-2 sm:gap-3">
+              {/* Language Switcher (Google Translate) */}
+              <div id="google_translate_element" className="hidden sm:block text-left" />
+
               {/* Notification Bell (Seller & Buyer) */}
               <div className="relative">
                 <button
