@@ -48,7 +48,28 @@ GI-tag verification, and direct creator-to-artisan affiliate partnerships.
 ================================================================================
 2. NATIONAL POLICY & SMART INDIA HACKATHON (SIH) ALIGNMENT
 ================================================================================
-The platform directly addresses 6 national challenges aligned with central ministries:
+PRIMARY TARGET PROBLEM STATEMENT:
+[SIH-26090] AI-Driven Market Linkage and Smart Cataloging Mobile Application for Marginalized Artisans
+- Organization: Ministry of Social Justice and Empowerment (MoSJE)
+- Department: Department of Social Justice and Empowerment
+- Theme: Heritage & Culture
+- Challenge Addressed:
+  1. AI Image Enhancer & Studio: Built-in camera & Cloudinary AI transformations
+     (e_improve, e_sharpen, b_white, c_pad, 1:1 aspect ratio) removing background clutter,
+     adjusting lighting, and standardizing product images to e-commerce specifications.
+  2. Multilingual Auto-Cataloger: NLP-driven voice input supporting Indian regional
+     languages (Hindi, Malayalam, Tamil, Telugu, Kannada, English) via Web Speech API
+     and Whisper/GPT/Groq/Gemini to translate and generate SEO-optimized product listings.
+  3. Dynamic Pricing Assistant: Cost-plus machine learning algorithm that factors
+     in raw material inputs (cotton, natural dyes), master weaver labor hours, and
+     GI authenticity premiums to compute fair, competitive selling prices.
+  4. Year-Round Market Linkages: Eliminates seasonal reliance on physical exhibitions
+     (Shilp Samagam, Surajkund Mela, Dilli Haat) through direct consumer sales,
+     Government e-Marketplace (GeM), ONDC sync, and corporate gifting consignments.
+  5. Low-Literacy UI/UX: Minimalist, visual neo-brutalist mobile-first design with
+     accessible font hierarchies and zero-typing voice-first onboarding.
+
+ADDITIONAL ALLIED NATIONAL INITIATIVES & CHALLENGES:
 
 [SIH-1601] Elimination of Middlemen & Direct Producer-to-Consumer Market Access
 - Ministry: Ministry of Textiles & Ministry of Rural Development
