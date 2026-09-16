@@ -2,13 +2,13 @@
 
 # TOTE
 
-### A Decentralized Handloom & Artisan Craft Marketplace
+### AI-Driven Market Linkage & Smart Cataloging Mobile Application for Marginalized Artisans
 
-**Vocal for Local • Atmanirbhar Bharat • PM Vishwakarma & GeM National Initiative**
+**Smart India Hackathon (SIH) Problem Statement ID: 26090**  
+**Ministry of Social Justice and Empowerment (MoSJE) • Department of Social Justice and Empowerment**  
+*Theme: Heritage & Culture • Vocal for Local • Atmanirbhar Bharat • PM Vishwakarma & GeM Initiative*
 
-A Smart India Hackathon (SIH) platform connecting rural artisans directly to
-conscious urban buyers, B2B/GeM procurement, and cultural creators — with zero
-middlemen, live UPI settlements, GI provenance, and vernacular voice storytelling.
+An AI-powered 'Virtual Business Manager' and decentralized market linkage platform empowering marginalized micro-entrepreneurs, traditional artisans, and weavers to transition from periodic physical fairs (Shilp Samagam, Surajkund Mela, Dilli Haat) into continuous year-round digital commerce.
 
 ![Next.js](https://img.shields.io/badge/Next.js%2016-000000?logo=nextdotjs&logoColor=white)
 ![React 19](https://img.shields.io/badge/React%2019-61DAFB?logo=react&logoColor=000)
@@ -22,11 +22,11 @@ middlemen, live UPI settlements, GI provenance, and vernacular voice storytellin
 
 ## Table of Contents
 
-- [About](#about)
-- [The Problem](#the-problem)
-- [The Solution](#the-solution)
+- [About & MoSJE Mission](#about--mosje-mission)
+- [SIH Problem Statement 26090](#sih-problem-statement-26090)
+- [Key AI Solutions & Features](#key-ai-solutions--features)
 - [Three Operating Modes](#three-operating-modes)
-- [Core Features](#core-features)
+- [Core Architecture](#core-architecture)
 - [Tech Stack](#tech-stack)
 - [Getting Started](#getting-started)
 - [Environment Variables](#environment-variables)
@@ -34,34 +34,30 @@ middlemen, live UPI settlements, GI provenance, and vernacular voice storytellin
 - [Data Persistence](#data-persistence)
 - [Project Structure](#project-structure)
 - [Scripts](#scripts)
-- [Polyfill Note](#polyfill-note)
 - [Contributing](#contributing)
 - [License](#license)
 
 ---
 
-## About
+## About & MoSJE Mission
 
-TOTE is a **three-mode** web platform for the Smart India Hackathon (SIH) that
-removes intermediaries from artisan commerce. Traditional rural weavers and
-craftspeople earn *zero-commission, peer-to-peer* revenue for every sale, and
-buyers get authentic, GI-tagged, sustainably-made totes directly from the maker.
+TOTE is an **AI-driven virtual business manager and market linkage mobile web application** created for **Smart India Hackathon (SIH Problem Statement 26090)** under the **Ministry of Social Justice and Empowerment (MoSJE)**.
 
-The platform targets a decentralized ecosystem of three personas:
+While physical government fairs and exhibitions (such as *Shilp Samagam*, *Surajkund Mela*, and *Dilli Haat*) provide temporary sales spikes, marginalized micro-entrepreneurs, weavers, and craftspersons lack continuous, year-round access to broader digital markets. Low digital literacy, language barriers, and technical gaps prevent them from professionally photographing, pricing, and cataloging products for modern e-commerce.
 
-1. **Buyer / Consumer** — discover and purchase handloom totes across many artisan stalls.
-2. **Artisan Maker / Seller** — a high-contrast workbench for fulfillment, UPI settlement, GeM (B2B/Government) orders, and vernacular voice-catalogued products.
-3. **Cultural Creator / Influencer** — pitch collabs, share trackable reel links, and earn commission on referred sales.
+TOTE solves this by acting as an **autonomous AI business manager** directly on the artisan's phone:
+1. **AI Image Enhancer & Studio**: Automatically eliminates cluttered backgrounds, balances lighting, and formats craft photos to 1200×1200px professional e-commerce studio standards.
+2. **Multilingual Auto-Cataloger**: Allows artisans to speak in regional languages (Hindi, Malayalam, Tamil, Telugu, Kannada, English) via voice notes; AI transcribes, translates, and generates structured, SEO-friendly listings.
+3. **Dynamic Pricing Assistant**: Machine learning cost-plus algorithm analyzing raw material costs (cotton, flax, natural vat dyes), labor hours, and GI premiums to recommend optimal, competitive selling prices.
+4. **Year-Round Market Linkages**: Multi-stall direct P2P UPI commerce, B2B corporate gifting batches, and Government e-Marketplace (GeM) & ONDC integration.
 
-## The Problem
+## SIH Problem Statement 26090
 
-- **Middlemen extraction** — 60–70% of artisan retail margins are lost to aggregators.
-- **Digital literacy barriers** — seller ERPs are complex and English-centric, unsuitable for low-literacy rural master weavers.
-- **Delayed working capital** — 30–90 day credit cycles strangle small workshops.
-- **Counterfeit influx** — synthetic bags dilute and counterfeit GI handlooms.
-- **Ineffective influencer linkages** — micro/nano creators lack direct, trackable partnerships with rural makers.
-
-## The Solution
+- **Organization**: Ministry of Social Justice and Empowerment (MoSJE)
+- **Department**: Department of Social Justice and Empowerment
+- **Category**: Software | **Theme**: Heritage & Culture
+- **Title**: AI-Driven Market Linkage and Smart Cataloging Mobile Application for Marginalized Artisans
+- **Core Challenge**: Bridge the divide between traditional generational craftsmanship and modern digital commerce through an intuitive, low-literacy AI virtual business manager.
 
 | Feature | Impact |
 | --- | --- |

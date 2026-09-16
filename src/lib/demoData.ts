@@ -2,6 +2,21 @@ import { Stall, Product, Order, User, Address, SihProblemStatement, ArtistReview
 
 export const SIH_PROBLEM_STATEMENTS: SihProblemStatement[] = [
   {
+    id: 'sih-26090',
+    code: 'SIH-26090',
+    title: 'AI-Driven Market Linkage and Smart Cataloging Mobile Application for Marginalized Artisans',
+    ministry: 'Ministry of Social Justice and Empowerment (MoSJE)',
+    category: 'Flagship Problem Statement · Heritage & Culture',
+    nationalChallenge:
+      'Marginalized micro-entrepreneurs, artisans, and weavers struggle to access broader digital markets beyond temporary physical fairs (Shilp Samagam, Surajkund Mela, Dilli Haat) due to low digital literacy, language barriers, and lack of technical skills to professionally photograph, price, and catalog products.',
+    toteSolution:
+      'AI Virtual Business Manager delivering: 1) AI Image Enhancer & Studio (auto background removal, lighting, 1200x1200px e-commerce standard), 2) Multilingual Auto-Cataloger (vernacular voice notes in Hindi/regional languages auto-translated to SEO descriptions), 3) Dynamic Pricing Assistant (cost-plus algorithm factoring raw materials, labor & GI premiums), and 4) Continuous year-round market linkages (B2B, GeM, and ONDC).',
+    impactMetrics:
+      'Continuous year-round digital sales channel; eliminates fair dependency; 0 technical barrier voice onboarding; 240% increase in artisan take-home income.',
+    alignedScheme: 'MoSJE Artisan Upliftment, PM Vishwakarma Yojana & GeM National Procurement',
+    badgeColor: 'bg-amber-100 text-amber-950 border-amber-500',
+  },
+  {
     id: 'sih-1',
     code: 'SIH-1601',
     title: 'Elimination of Middlemen & Direct Producer-to-Consumer Market Access',

@@ -127,24 +127,29 @@ function MarketplaceContent() {
           <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-[#18181B] pb-4 relative z-10">
             <div className="flex items-center gap-2 font-mono text-xs font-bold uppercase tracking-wider text-amber-900 bg-amber-100/90 px-3 py-1 border border-amber-400">
               <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-              <span>आत्मनिर्भर भारत &middot; PM VISHWAKARMA &amp; GeM NATIONAL INITIATIVE</span>
+              <span>आत्मनिर्भर भारत &middot; MoSJE &middot; PM VISHWAKARMA &amp; GeM NATIONAL INITIATIVE</span>
             </div>
             <div className="font-mono text-xs font-bold text-[#52525B]">
-              VERIFIED CATALOG: 2 AUTHENTIC ARTISAN CREATIONS
+              VERIFIED CATALOG: AUTHENTIC ARTISAN CREATIONS
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
             <div className="lg:col-span-7 space-y-4">
-              <h1 className="text-3xl sm:text-5xl font-mono font-black text-[#18181B] tracking-tight leading-tight uppercase">
-                Handcrafted Indian Totes.{' '}
-                <span className="bg-amber-300 px-1 border border-[#18181B]">
-                  Direct Artisan Route.
+              <div className="space-y-1">
+                <span className="text-xs font-mono font-bold uppercase text-amber-800 tracking-wider">
+                  MoSJE &middot; Ministry of Social Justice &amp; Empowerment (SIH-26090)
                 </span>
-              </h1>
+                <h1 className="text-3xl sm:text-5xl font-mono font-black text-[#18181B] tracking-tight leading-tight uppercase">
+                  AI Virtual Business Manager.{' '}
+                  <span className="bg-amber-300 px-1 border border-[#18181B]">
+                    Direct Artisan Route.
+                  </span>
+                </h1>
+              </div>
 
               <p className="font-mono text-xs sm:text-sm text-[#52525B] leading-relaxed">
-                A decentralized marketplace connecting India&apos;s master Vishwakarma weavers directly to urban shoppers, corporate gifting buyers, and government public procurement (GeM &amp; ONDC). Zero middlemen fees.
+                Empowering India&apos;s marginalized artisans, weavers, and handicraft micro-entrepreneurs to transition beyond periodic physical exhibitions (Shilp Samagam, Surajkund Mela, Dilli Haat) into continuous year-round digital commerce. Featuring AI studio photo enhancement, regional voice auto-cataloging, dynamic fair pricing, and direct B2B/GeM public procurement. Zero middlemen fees.
               </p>
 
               {/* Action Buttons Block */}
@@ -153,7 +158,7 @@ function MarketplaceContent() {
                   href="#catalog"
                   className="py-3 px-6 bg-[#18181B] text-white hover:bg-zinc-800 text-xs font-mono font-bold uppercase tracking-wider border-2 border-[#18181B] shadow-[3px_3px_0px_0px_#71717A] active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center gap-2"
                 >
-                  <span>Explore 2 Bags</span>
+                  <span>Explore Catalog</span>
                   <ArrowRight className="w-4 h-4" />
                 </a>
 
@@ -170,7 +175,7 @@ function MarketplaceContent() {
                   className="py-3 px-5 bg-white hover:bg-[#FAFAF8] text-[#18181B] text-xs font-mono font-bold uppercase tracking-wider border-2 border-[#18181B] shadow-[3px_3px_0px_0px_#18181B] active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center gap-2"
                 >
                   <Sparkles className="w-4 h-4 text-amber-600" />
-                  <span>6 SIH Solutions</span>
+                  <span>SIH Solutions</span>
                 </a>
               </div>
             </div>
@@ -238,7 +243,7 @@ function MarketplaceContent() {
                 <span>Verified Handloom Catalog</span>
               </div>
               <h2 className="text-xl sm:text-2xl font-mono font-black uppercase text-[#18181B] mt-1">
-                Authentic Artisan Tote Collection (2 Active Items)
+                Authentic Artisan Handloom &amp; Craft Showcase
               </h2>
             </div>
 
@@ -352,27 +357,27 @@ function MarketplaceContent() {
               </div>
 
               <blockquote className="text-sm sm:text-base text-[#18181B] leading-relaxed italic border-l-4 border-amber-500 pl-4 bg-[#FAFAF8] p-3">
-                &ldquo;Our Vishwakarma brothers and sisters are the true architects of India&apos;s living cultural soul. When every citizen chooses a handcrafted Indian tote over synthetic imports, we honour generational craftsmanship, empower rural families, and build an Atmanirbhar Bharat.&rdquo;
+                &ldquo;Our Vishwakarma brothers and sisters and marginalized artisans are the true architects of India&apos;s living cultural soul. When every citizen chooses handcrafted Indian heritage goods over synthetic imports, we honour generational craftsmanship, empower rural families, and build an Atmanirbhar Bharat.&rdquo;
               </blockquote>
 
               <p className="text-xs text-[#52525B] leading-relaxed">
-                Tote is built to directly realize the Government of India&apos;s vision of connecting grassroots handloom weavers, leather stitchers, and craft cooperatives with conscious urban and global consumers through open, decentralized digital architecture.
+                Tote is built to realize the mission of the Ministry of Social Justice and Empowerment (MoSJE) and Government of India—empowering grassroots handloom weavers, leather stitchers, and craft cooperatives with an AI-driven virtual business manager, smart cataloging, and direct market linkages.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 5. 6 SIH PROBLEM STATEMENTS MODULAR BLOCK GRID */}
+      {/* 5. SIH PROBLEM STATEMENTS MODULAR BLOCK GRID */}
       <section id="sih-statements" className="px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 max-w-7xl mx-auto">
         <div className="border-2 border-[#18181B] bg-white p-6 sm:p-8 shadow-[6px_6px_0px_0px_#18181B] space-y-6">
           <div className="border-b-2 border-[#18181B] pb-4">
             <span className="font-mono text-xs font-bold uppercase text-amber-800 flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5" />
-              Smart India Hackathon 2024
+              Smart India Hackathon &middot; MoSJE Focus
             </span>
             <h2 className="text-xl sm:text-2xl font-mono font-black uppercase text-[#18181B] mt-1">
-              6 Official SIH Problem Statements Solved by Tote
+              National Problem Statements Solved by Tote (SIH-26090 Flagship)
             </h2>
           </div>
 
@@ -466,7 +471,7 @@ export default function HomePage() {
     <Suspense
       fallback={
         <div className="min-h-screen bg-[#FBFBF9] py-16 text-center text-xs font-mono text-[#71717A]">
-          Loading handcrafted Indian heritage totes...
+          Loading artisan craft catalog &amp; virtual business manager...
         </div>
       }
     >

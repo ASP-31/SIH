@@ -9,9 +9,9 @@ import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { ToastContainer } from "@/components/ToastContainer";
 
 export const metadata: Metadata = {
-  title: "Tote • Handcrafted Totes by Independent Artisans",
+  title: "Tote • AI-Driven Market Linkage & Smart Cataloging for Marginalized Artisans",
   description:
-    "A curated multi-vendor marketplace connecting independent tote bag artisans with conscious buyers. Canvas, crochet, waxed, and everyday slow-crafted totes.",
+    "An AI-powered virtual business manager empowering marginalized artisans and weavers with AI Studio photo enhancement, multilingual voice auto-cataloging, dynamic fair pricing, and year-round market linkages (B2B, GeM & ONDC). Ministry of Social Justice and Empowerment (MoSJE) initiative.",
 };
 
 export const viewport: Viewport = {

@@ -1,11 +1,12 @@
 ================================================================================
-TOTE: DECENTRALIZED HANDLOOM & ARTISAN CRAFT MARKETPLACE PLATFORM
-Vocal for Local • Atmanirbhar Bharat • PM Vishwakarma & GeM National Initiative
-Smart India Hackathon (SIH) Project Architecture & Technical Documentation
+TOTE: AI-DRIVEN MARKET LINKAGE & SMART CATALOGING MOBILE APPLICATION
+Virtual Business Manager for Marginalized Artisans, Weavers & Micro-Entrepreneurs
+Ministry of Social Justice and Empowerment (MoSJE) • Problem Statement ID: 26090
+Smart India Hackathon (SIH) Technical Architecture & System Documentation
 ================================================================================
 
 TABLE OF CONTENTS:
-1. EXECUTIVE SUMMARY & PROBLEM CONTEXT
+1. EXECUTIVE SUMMARY & PROBLEM CONTEXT (MoSJE SIH-26090)
 2. NATIONAL POLICY & SMART INDIA HACKATHON (SIH) ALIGNMENT
 3. COMPLETE TECHNOLOGY STACK
 4. PLATFORM ARCHITECTURE & THE 3 INDEPENDENT OPERATING MODES
@@ -23,27 +24,40 @@ TABLE OF CONTENTS:
 8. SETUP, RUNTIME & DEPLOYMENT INSTRUCTIONS
 
 ================================================================================
-1. EXECUTIVE SUMMARY & PROBLEM CONTEXT
+1. EXECUTIVE SUMMARY & PROBLEM CONTEXT (MoSJE SIH-26090)
 ================================================================================
-Traditional rural and peri-urban artisans across India (weavers, block-printers,
-embroidery artists, jute stitchers) generate high-tensile, biodegradable carry totes
-and heritage textile bags. Despite high urban and international demand for slow,
-sustainable fashion, traditional artisans suffer from:
-1. High Middlemen Exploitation: 60% to 70% of artisan retail margins are extracted
-   by intermediaries and urban retail aggregators.
-2. Digital Literacy Barriers: Modern ERPs and seller portals are overly complex,
-   English-centric, and unsuitable for low-literacy rural master weavers.
-3. Delayed Working Capital: Traditional retail buyers operate on 30-to-90 day credit
-   cycles, strangling small workshops who need immediate cash for raw cotton & dyes.
-4. Counterfeit Synthetic Influx: Cheap polyester and synthetic bags counterfeit
-   Geographical Indication (GI) handlooms and dilute genuine heritage crafts.
-5. Ineffective Influencer Linkages: Micro and nano creators who want to champion
-   sustainable "Vocal for Local" crafts lack direct tracking, sample requests, or
-   transparent commission deals with rural makers.
+BACKGROUND:
+The government actively supports the socio-economic upliftment of marginalized
+communities, particularly micro-entrepreneurs, artisans, and weavers. Financial
+assistance is provided to establish small-scale manufacturing and handicraft units.
+To help these beneficiaries sell their goods, market exposure is facilitated through
+periodic physical exhibitions, cluster development programs, and trade fairs (such
+as Shilp Samagam, Surajkund Mela, and Dilli Haat).
 
-TOTE solves this by providing a decentralized, multi-stall, 3-mode web platform
-built for zero-commission direct artisan commerce, real-time UPI settlements,
-GI-tag verification, and direct creator-to-artisan affiliate partnerships.
+THE CRITICAL GAP:
+While physical exhibitions provide a temporary boost in sales, these micro-
+entrepreneurs lack continuous, year-round access to broader digital markets.
+Transitioning to the digital economy is hindered by:
+1. Low Digital Literacy: Modern ERPs and seller portals are overly complex and
+   unusable for rural master craftspeople.
+2. Language Barriers: Seller dashboards are English-centric and fail to accommodate
+   vernacular regional dialects (Hindi, Malayalam, Tamil, etc.).
+3. Technical Skill Deficits: Inability to professionally photograph crafts, remove
+   background clutter, write compelling descriptions, or calculate dynamic market prices.
+4. Exploitative Middlemen: Aggregators extract 60% to 70% of retail margins.
+5. Delayed Working Capital: Traditional retail operates on 30-90 day credit cycles.
+
+THE TOTE SOLUTION:
+TOTE is an intuitive, AI-driven mobile web application that functions as an autonomous
+"Virtual Business Manager" for marginalized artisans. It bridges traditional
+craftsmanship with digital commerce through:
+- AI Image Enhancer & Studio: Automatic background removal, lighting correction, and
+  1200x1200px professional e-commerce standardization.
+- Multilingual Auto-Cataloger: Regional voice note transcription into SEO-friendly
+  English and Hindi product listings via NLP / Whisper.
+- Dynamic Pricing Assistant: Raw material cost-plus formula ensuring living wages.
+- Year-Round Market Linkages: Direct consumer UPI sales, B2B wholesale, and Government
+  e-Marketplace (GeM HSN 42021290) & ONDC integration.
 
 ================================================================================
 2. NATIONAL POLICY & SMART INDIA HACKATHON (SIH) ALIGNMENT
