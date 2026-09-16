@@ -300,7 +300,7 @@ export function Navbar() {
                     <span>GeM Hub</span>
                   </Link>
                   <Link
-                    href="/stall/earthstitch-studio"
+                    href={`/stall/${session?.sellerStallSlug || 'earthstitch-studio'}`}
                     className="hover:text-amber-300 transition-colors text-zinc-400"
                   >
                     Stall Preview

@@ -22,17 +22,20 @@ import {
   BookOpen,
   CheckCircle2,
   ThumbsUp,
+  Plus,
 } from 'lucide-react';
 import { Stall, Product, ArtistReview } from '@/lib/types';
 import {
   getDemoStalls,
+  saveDemoStalls,
   getDemoProducts,
   getArtisanReviews,
   addArtisanReview,
+  INITIAL_PRODUCTS,
 } from '@/lib/demoData';
 import { ProductCard } from '@/components/ProductCard';
 import { useToastStore } from '@/hooks/useToastStore';
-import { getUserSession } from '@/lib/userSession';
+import { getUserSession, getRegisteredAccounts, UserSession } from '@/lib/userSession';
 
 interface StallPageProps {
   params: Promise<{
@@ -44,7 +47,7 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
   const resolvedParams = use(params);
   const slug = resolvedParams.slug;
   const addToast = useToastStore((s) => s.addToast);
-  const session = getUserSession();
+  const [session, setSession] = useState<UserSession | null>(null);
 
   const [stall, setStall] = useState<Stall | null>(null);
   const [stallProducts, setStallProducts] = useState<Product[]>([]);
@@ -57,20 +60,112 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
   const [newReviewRating, setNewReviewRating] = useState(5);
   const [newReviewComment, setNewReviewComment] = useState('');
   const [newReviewCraft, setNewReviewCraft] = useState('');
-  const [newReviewName, setNewReviewName] = useState(session?.name || '');
+  const [newReviewName, setNewReviewName] = useState('');
 
   useEffect(() => {
+    const currSession = getUserSession();
+    setSession(currSession);
+    if (currSession?.name) {
+      setNewReviewName(currSession.name);
+    }
+
     const stalls = getDemoStalls();
-    const foundStall = stalls.find((s) => s.slug === slug);
-    if (foundStall) {
-      setStall(foundStall);
-      const allProducts = getDemoProducts();
-      setStallProducts(allProducts.filter((p) => p.stall_id === foundStall.id));
-      const loadedReviews = getArtisanReviews(foundStall.id);
-      setReviews(loadedReviews);
-      if (allProducts.length > 0) {
-        setNewReviewCraft(allProducts[0].title);
+    let foundStall = stalls.find((s) => s.slug === slug || s.id === slug);
+
+    // 1. If stall not found in demoStalls, check active session or registered accounts
+    if (!foundStall) {
+      if (currSession && (currSession.sellerStallSlug === slug || currSession.sellerStallId === slug)) {
+        foundStall = {
+          id: currSession.sellerStallId || `stall_${slug}`,
+          user_id: currSession.id,
+          name: currSession.sellerStallName || currSession.name || 'Artisan Workshop',
+          slug: currSession.sellerStallSlug || slug,
+          artisan_name: currSession.name || 'Master Artisan',
+          location: 'Kochi, Kerala',
+          state: currSession.stateOrigin || 'Kerala',
+          odop_district: currSession.craftSpecialty || 'Handloom & Craft Cluster',
+          craft_heritage: currSession.craftSpecialty || 'Traditional Handcrafted Canvas & Khadi',
+          bio: `${currSession.name}'s dedicated rural artisan workshop, crafting authentic Atmanirbhar Bharat handloom creations.`,
+          logo_url: currSession.avatar_url || 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=300&q=80',
+          banner_url: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=1200&q=80',
+          is_verified: true,
+          is_vishwakarma_verified: true,
+          is_gi_tagged: true,
+          rating: 5.0,
+          review_count: 0,
+          sales_count: 0,
+          payout_account_id: 'acct_direct_upi',
+          payout_status: 'ready',
+          heritage_story: 'Generational master craftsperson dedicated to authentic slow fashion, organic handlooms, and zero synthetic dyes.',
+          craft_origin_history: 'Centuries of Indian indigenous handloom and craft cluster heritage.',
+          created_at: new Date().toISOString(),
+        };
+        saveDemoStalls([...stalls, foundStall]);
+      } else {
+        const accounts = getRegisteredAccounts();
+        const matchedAccount = accounts.find((a) => a.sellerStallSlug === slug || a.sellerStallId === slug);
+        if (matchedAccount) {
+          foundStall = {
+            id: matchedAccount.sellerStallId || `stall_${slug}`,
+            user_id: matchedAccount.id,
+            name: matchedAccount.sellerStallName || matchedAccount.name || 'Artisan Workshop',
+            slug: matchedAccount.sellerStallSlug || slug,
+            artisan_name: matchedAccount.name || 'Master Artisan',
+            location: 'Jaipur, Rajasthan',
+            state: matchedAccount.stateOrigin || 'Rajasthan',
+            odop_district: matchedAccount.craftSpecialty || 'Handloom & Craft Cluster',
+            craft_heritage: matchedAccount.craftSpecialty || 'Traditional Handcrafted Canvas & Khadi',
+            bio: `${matchedAccount.name}'s dedicated rural artisan workshop.`,
+            logo_url: matchedAccount.avatar_url || 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=300&q=80',
+            banner_url: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=1200&q=80',
+            is_verified: true,
+            is_vishwakarma_verified: true,
+            is_gi_tagged: true,
+            rating: 5.0,
+            review_count: 0,
+            sales_count: 0,
+            payout_account_id: 'acct_direct_upi',
+            payout_status: 'ready',
+            heritage_story: 'Generational master craftsperson dedicated to authentic slow fashion.',
+            craft_origin_history: 'Centuries of Indian indigenous handloom and craft cluster heritage.',
+            created_at: new Date().toISOString(),
+          };
+          saveDemoStalls([...stalls, foundStall]);
+        }
       }
+    }
+
+    // 2. Fallback to first stall if not found so page never stays stuck on infinite loading
+    if (!foundStall) {
+      foundStall = stalls[0];
+    }
+
+    setStall(foundStall);
+
+    // 3. Robust Product Matching: Match by stall_id, stall_slug, or fallback to INITIAL_PRODUCTS
+    const allProducts = getDemoProducts();
+    let matching = allProducts.filter(
+      (p) =>
+        p.stall_id === foundStall.id ||
+        (foundStall.slug && p.stall_slug === foundStall.slug) ||
+        p.stall_slug === slug ||
+        (p.stall_id && foundStall.id && p.stall_id.toLowerCase() === foundStall.id.toLowerCase())
+    );
+
+    // If zero products matched and it's a default stall, pull from INITIAL_PRODUCTS
+    if (matching.length === 0) {
+      if (foundStall.id === 'stall_1' || foundStall.slug === 'earthstitch-studio') {
+        matching = INITIAL_PRODUCTS.filter((p) => p.stall_id === 'stall_1');
+      } else if (foundStall.id === 'stall_2' || foundStall.slug === 'the-weave-knot') {
+        matching = INITIAL_PRODUCTS.filter((p) => p.stall_id === 'stall_2');
+      }
+    }
+
+    setStallProducts(matching);
+    const loadedReviews = getArtisanReviews(foundStall.id);
+    setReviews(loadedReviews);
+    if (matching.length > 0) {
+      setNewReviewCraft(matching[0].title);
     }
   }, [slug]);
 
@@ -372,8 +467,25 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
         </div>
 
         {stallProducts.length === 0 ? (
-          <div className="bg-[#FFFFFF] rounded-2xl border border-[#E5E5E0] p-8 text-center text-xs text-[#71717A]">
-            This artisan hasn&apos;t listed bags yet. Check back soon!
+          <div className="bg-white border-2 border-dashed border-[#18181B] p-8 text-center space-y-3 shadow-[4px_4px_0px_0px_#18181B] font-mono">
+            <Sparkles className="w-8 h-8 text-amber-600 mx-auto" />
+            <h3 className="font-bold text-sm uppercase text-[#18181B]">
+              Stallfront Active
+            </h3>
+            <p className="text-xs text-[#52525B] max-w-md mx-auto leading-relaxed">
+              {session?.role === 'seller'
+                ? "You haven't added any products to your catalog yet. Use the Artisan Studio or AI Voice Cataloger to list your handcrafted creations."
+                : "This artisan is currently weaving new pieces for their digital stallfront. Check back soon!"}
+            </p>
+            {session?.role === 'seller' && (
+              <Link
+                href="/dashboard?tab=catalog"
+                className="inline-flex items-center gap-1.5 py-2.5 px-5 bg-[#18181B] text-white text-xs font-bold uppercase border-2 border-[#18181B] shadow-[2px_2px_0px_0px_#71717A] hover:bg-zinc-800 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Products to Catalog</span>
+              </Link>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">

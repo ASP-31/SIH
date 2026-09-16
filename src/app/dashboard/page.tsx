@@ -49,6 +49,7 @@ import {
   saveDemoOrders,
   getDemoProducts,
   saveDemoProducts,
+  INITIAL_PRODUCTS,
   getDemoStalls,
   saveDemoStalls,
   confirmOrderPayment,
@@ -161,21 +162,70 @@ export default function SellerDashboardPage() {
   });
 
   const loadData = () => {
+    const currSession = getUserSession();
+    const effectiveStallId = currSession?.sellerStallId || stallId;
+
     const orders = getDemoOrders();
     setAllOrders(orders);
 
     const b2b = getB2BOrders();
     setB2bOrders(b2b);
 
-    const products = getDemoProducts();
-    setStallProducts(products.filter((p) => p.stall_id === stallId));
-
     const stalls = getDemoStalls();
-    const currentStall = stalls.find((s) => s.id === stallId) || stalls[0];
+    let currentStall = stalls.find(
+      (s) => s.id === effectiveStallId || (currSession?.sellerStallSlug && s.slug === currSession.sellerStallSlug)
+    );
+
+    if (!currentStall && currSession) {
+      currentStall = {
+        id: effectiveStallId,
+        user_id: currSession.id,
+        name: currSession.sellerStallName || currSession.name || 'Artisan Workshop',
+        slug: currSession.sellerStallSlug || `stall-${effectiveStallId}`,
+        artisan_name: currSession.name || 'Master Artisan',
+        location: 'Kochi, Kerala',
+        state: currSession.stateOrigin || 'Kerala',
+        odop_district: currSession.craftSpecialty || 'Handloom & Craft Cluster',
+        craft_heritage: currSession.craftSpecialty || 'Traditional Handcrafted Canvas & Khadi',
+        bio: `${currSession.name}'s dedicated rural artisan workshop, crafting authentic Atmanirbhar Bharat handloom creations.`,
+        logo_url: currSession.avatar_url || 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=300&q=80',
+        banner_url: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=1200&q=80',
+        is_verified: true,
+        is_vishwakarma_verified: true,
+        is_gi_tagged: true,
+        rating: 5.0,
+        review_count: 0,
+        sales_count: 0,
+        payout_account_id: 'acct_direct_upi',
+        payout_status: 'ready',
+        heritage_story: 'Generational master craftsperson dedicated to authentic slow fashion and zero synthetic dyes.',
+        craft_origin_history: 'Centuries of Indian indigenous handloom and craft cluster heritage.',
+        created_at: new Date().toISOString(),
+      };
+      saveDemoStalls([...stalls, currentStall]);
+    }
+
+    if (!currentStall) {
+      currentStall = stalls[0];
+    }
     setStall(currentStall);
 
+    const products = getDemoProducts();
+    let matching = products.filter(
+      (p) =>
+        p.stall_id === effectiveStallId ||
+        (currentStall && p.stall_id === currentStall.id) ||
+        (currentStall && p.stall_slug === currentStall.slug) ||
+        (currSession?.sellerStallSlug && p.stall_slug === currSession.sellerStallSlug)
+    );
+
+    if (matching.length === 0 && (effectiveStallId === 'stall_1' || currentStall.id === 'stall_1')) {
+      matching = INITIAL_PRODUCTS.filter((p) => p.stall_id === 'stall_1');
+    }
+    setStallProducts(matching);
+
     setNotifications(getNotifications('seller'));
-    setSellerCollabs(getCollabProposalsForSeller(stallId));
+    setSellerCollabs(getCollabProposalsForSeller(effectiveStallId));
   };
 
   useEffect(() => {
@@ -446,14 +496,25 @@ export default function SellerDashboardPage() {
           : p
       );
       saveDemoProducts(updated);
-      setStallProducts(updated.filter((p) => p.stall_id === stallId));
+      setStallProducts(
+        updated.filter(
+          (p) =>
+            p.stall_id === stallId ||
+            (stall && p.stall_id === stall.id) ||
+            (stall && p.stall_slug === stall.slug)
+        )
+      );
       addToast({ title: 'Product updated', message: productForm.title, type: 'success' });
     } else {
+      const targetStallId = stall?.id || stallId;
+      const targetStallSlug = stall?.slug || 'earthstitch-studio';
+      const targetStallName = stall?.name || 'EarthStitch Studio';
+
       const newProd: Product = {
         id: `prod_${Date.now()}`,
-        stall_id: stallId,
-        stall_name: stall?.name || 'EarthStitch Studio',
-        stall_slug: stall?.slug || 'earthstitch-studio',
+        stall_id: targetStallId,
+        stall_name: targetStallName,
+        stall_slug: targetStallSlug,
         title: productForm.title,
         slug: productForm.title.toLowerCase().replace(/\s+/g, '-'),
         description: productForm.description,
@@ -479,8 +540,15 @@ export default function SellerDashboardPage() {
       };
       const updated = [newProd, ...all];
       saveDemoProducts(updated);
-      setStallProducts(updated.filter((p) => p.stall_id === stallId));
-      addToast({ title: 'New bag listed', message: productForm.title, type: 'success' });
+      setStallProducts(
+        updated.filter(
+          (p) =>
+            p.stall_id === stallId ||
+            p.stall_id === targetStallId ||
+            p.stall_slug === targetStallSlug
+        )
+      );
+      addToast({ title: 'New craft listed', message: productForm.title, type: 'success' });
     }
 
     setIsProductModalOpen(false);
