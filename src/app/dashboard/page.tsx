@@ -42,6 +42,7 @@ import {
   Video,
   Send,
   Eye,
+  Loader2,
 } from 'lucide-react';
 import { Order, OrderItem, Product, Stall, OrderItemStatus, OrderNotification, CollabProposal } from '@/lib/types';
 import {
@@ -141,6 +142,7 @@ export default function SellerDashboardPage() {
 
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
 
   // New product form state
   const [productForm, setProductForm] = useState({
@@ -553,6 +555,52 @@ export default function SellerDashboardPage() {
 
     setIsProductModalOpen(false);
     setEditingProduct(null);
+  };
+
+  const handleAnalyzeImageWithVision = async () => {
+    if (!productForm.imageUrl) return;
+    setIsAnalyzingImage(true);
+    try {
+      const res = await fetch('/api/ai/analyze-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl: productForm.imageUrl }),
+      });
+      const data = await res.json();
+      if (data.success && data.catalog) {
+        const cat = data.catalog;
+        setProductForm((prev) => ({
+          ...prev,
+          title: cat.title || prev.title,
+          description: cat.description || prev.description,
+          category: cat.category || prev.category,
+          price: cat.price || prev.price,
+          material: cat.material || prev.material,
+          dimensions: cat.dimensions || prev.dimensions,
+          capacity_liters: cat.capacity_liters || prev.capacity_liters,
+          strap_drop: cat.strap_drop || prev.strap_drop,
+        }));
+        addToast({
+          title: '✨ AI Vision Auto-Cataloged!',
+          message: `Identified "${cat.title}" with fair-trade price of ${formatINR(cat.price)}.`,
+          type: 'success',
+        });
+      } else {
+        addToast({
+          title: 'Image Analysis Notice',
+          message: data.error || 'Could not analyze craft photo.',
+          type: 'info',
+        });
+      }
+    } catch (err: any) {
+      addToast({
+        title: 'Analysis Error',
+        message: err.message || 'Failed to connect to Vision AI.',
+        type: 'error',
+      });
+    } finally {
+      setIsAnalyzingImage(false);
+    }
   };
 
   const handleOpenEditProduct = (prod: Product) => {
@@ -3078,6 +3126,33 @@ export default function SellerDashboardPage() {
                     }));
                   }}
                 />
+
+                {/* AI Vision Auto-Catalog Button */}
+                {productForm.imageUrl && (
+                  <div className="pt-1 font-mono">
+                    <button
+                      type="button"
+                      disabled={isAnalyzingImage}
+                      onClick={handleAnalyzeImageWithVision}
+                      className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-700 via-orange-600 to-amber-700 hover:from-amber-800 hover:to-orange-700 text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 border-2 border-[#18181B] shadow-[2px_2px_0px_0px_#18181B] active:translate-x-0.5 active:translate-y-0.5 transition-all disabled:opacity-50"
+                    >
+                      {isAnalyzingImage ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin text-amber-200" />
+                          <span>Gemini Vision inspecting craft weave &amp; dyes...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4 text-amber-200" />
+                          <span>✨ AI Vision: Auto-Fill Catalog from Photo</span>
+                        </>
+                      )}
+                    </button>
+                    <p className="text-[10px] text-[#71717A] mt-1.5 text-center">
+                      AI analyzes fabric weave, natural dyes &amp; computes fair-trade living wage automatically.
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-2 pt-2">
