@@ -1,6 +1,7 @@
 'use client';
 
 import { Address, UserRole, InfluencerProfile } from './types';
+import { getSupabaseClient } from './supabase';
 
 export interface UserSession {
   id: string;
@@ -22,59 +23,57 @@ export interface UserSession {
   influencerProfile?: InfluencerProfile;
 }
 
-export interface RegisteredAccount extends UserSession {
-  passwordHash: string;
-  registeredAt: string;
-}
-
 const SESSION_STORAGE_KEY = 'tote_real_session_v5';
-const REGISTERED_USERS_KEY = 'tote_registered_accounts_v5';
 
-export function switchRole(targetRole: UserRole): { success: boolean; user?: UserSession } {
-  const accounts = getRegisteredAccounts();
-  const match = accounts.find((a) => a.role === targetRole);
-  if (match) {
-    setUserSession(match);
-    return { success: true, user: match };
+export async function switchRole(targetRole: UserRole): Promise<{ success: boolean; user?: UserSession }> {
+  const supabase = getSupabaseClient();
+  if (!supabase) return { success: false };
+
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('role', targetRole)
+    .single();
+
+  if (error || !profile) return { success: false };
+
+  // In a real Supabase auth flow, switching roles usually means switching accounts.
+  // For this MVP, we'll simulate it by updating the local session if we found a profile.
+  // Note: Actual account switching requires re-auth.
+  const session = await getUserSession();
+  if (session && session.id === profile.id) {
+    setUserSession({ ...session, role: targetRole });
+    return { success: true, user: { ...session, role: targetRole } };
   }
+
   return { success: false };
 }
 
-// Helper for consistent simple hash (sufficient for client-side storage sandbox)
-function simpleHash(str: string): string {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) - hash + str.charCodeAt(i);
-    hash |= 0;
-  }
-  return `h_${Math.abs(hash).toString(16)}`;
-}
-
-export function getRegisteredAccounts(): RegisteredAccount[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = localStorage.getItem(REGISTERED_USERS_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-export function saveRegisteredAccounts(accounts: RegisteredAccount[]): void {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(accounts));
-  }
-}
-
-export function getUserSession(): UserSession | null {
+export async function getUserSession(): Promise<UserSession | null> {
   if (typeof window === 'undefined') return null;
-  try {
-    const raw = localStorage.getItem(SESSION_STORAGE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as UserSession;
-  } catch {
-    return null;
-  }
+
+  const supabase = getSupabaseClient();
+  if (!supabase) return null;
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return null;
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', session.user.id)
+    .single();
+
+  if (!profile) return null;
+
+  return {
+    id: profile.id,
+    email: profile.email,
+    name: profile.name || 'User',
+    role: profile.role as UserRole,
+    phone: profile.phone,
+    avatar_url: profile.avatar_url,
+  };
 }
 
 export function setUserSession(session: UserSession | null): void {
@@ -88,29 +87,29 @@ export function setUserSession(session: UserSession | null): void {
   }
 }
 
-export function registerUser(payload: {
+export async function registerUser(payload: {
   role: 'buyer' | 'seller' | 'influencer';
   name: string;
   email: string;
   password?: string;
   phone?: string;
-  // Buyer specifics
   street?: string;
   city?: string;
   state?: string;
   postalCode?: string;
-  // Seller specifics
   studioName?: string;
   craftSpecialty?: string;
   stateOrigin?: string;
   gemUdyamId?: string;
   upiId?: string;
-  // Influencer specifics
   socialHandle?: string;
   socialPlatform?: 'instagram' | 'youtube' | 'lifestyle_blog';
   followerCount?: string;
   contentNiche?: string;
-}): { success: boolean; error?: string; user?: UserSession } {
+}): Promise<{ success: boolean; error?: string; user?: UserSession }> {
+  const supabase = getSupabaseClient();
+  if (!supabase) return { success: false, error: 'Supabase client not initialized.' };
+
   const cleanEmail = payload.email.toLowerCase().trim();
   const cleanName = payload.name.trim();
 
@@ -122,42 +121,33 @@ export function registerUser(payload: {
     return { success: false, error: 'Password must be at least 4 characters.' };
   }
 
-  const existing = getRegisteredAccounts();
-  const duplicate = existing.find((u) => u.email.toLowerCase() === cleanEmail);
-  if (duplicate) {
-    return {
-      success: false,
-      error: `An account already exists for ${cleanEmail}. Please sign in instead.`,
-    };
-  }
+  const { data, error: authError } = await supabase.auth.signUp({
+    email: cleanEmail,
+    password: payload.password,
+    options: {
+      data: {
+        name: cleanName,
+        role: payload.role,
+        phone: payload.phone,
+      },
+    },
+  });
 
-  const id = `${payload.role}_${Date.now().toString(36)}`;
-  const passwordHash = simpleHash(payload.password);
-  let newUser: RegisteredAccount;
+  if (authError) return { success: false, error: authError.message };
+  if (!data.user) return { success: false, error: 'User creation failed.' };
 
-  if (payload.role === 'buyer') {
-    const address: Address = {
-      id: `addr_${Date.now()}`,
-      name: cleanName,
-      phone: payload.phone || '+91 98000 00000',
-      street: payload.street || 'Residence',
-      city: payload.city || 'Bengaluru',
-      state: payload.state || 'Karnataka',
-      postalCode: payload.postalCode || '560001',
-      country: 'India',
-      isDefault: true,
-    };
+  // The handle_new_user() trigger in Supabase handles the profile insertion.
+  // Now we handle the role-specific extra data.
 
-    newUser = {
-      id,
-      role: 'buyer',
-      name: cleanName,
-      email: cleanEmail,
-      phone: payload.phone,
-      passwordHash,
-      addresses: [address],
-      registeredAt: new Date().toISOString(),
-    };
+  if (payload.role === 'buyer' && payload.street) {
+    await supabase.from('addresses').insert({
+      user_id: data.user.id,
+      street: payload.street,
+      city: payload.city,
+      state: payload.state,
+      postal_code: payload.postalCode,
+      is_default: true,
+    });
   } else if (payload.role === 'influencer') {
     const handle = payload.socialHandle
       ? payload.socialHandle.startsWith('@')
@@ -165,87 +155,85 @@ export function registerUser(payload: {
         : `@${payload.socialHandle}`
       : `@${cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`;
 
-    newUser = {
-      id,
-      role: 'influencer',
-      name: cleanName,
-      email: cleanEmail,
-      phone: payload.phone,
-      passwordHash,
-      influencerProfile: {
-        id,
-        user_id: id,
-        name: cleanName,
-        handle,
-        platform: payload.socialPlatform || 'instagram',
-        followers: payload.followerCount || '10K',
-        category: payload.contentNiche || 'Sustainable Fashion & Slow Living',
-        bio: `Cultural creator promoting authentic Vocal for Local crafts and Atmanirbhar Bharat handlooms.`,
-        avatar_url: `https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80`,
-        preferred_rate_type: 'commission',
-        default_commission_pct: 12,
-      },
-      registeredAt: new Date().toISOString(),
-    };
-  } else {
-    // Seller / Artisan
+    await supabase.from('influencer_profiles').insert({
+      user_id: data.user.id,
+      handle,
+      platform: payload.socialPlatform || 'instagram',
+      followers: payload.followerCount || '10K',
+      category: payload.contentNiche || 'Sustainable Fashion & Slow Living',
+      bio: `Cultural creator promoting authentic Vocal for Local crafts and Atmanirbhar Bharat handlooms.`,
+    });
+  } else if (payload.role === 'seller') {
     const studio = payload.studioName?.trim() || `${cleanName} Handlooms`;
     const slug = studio.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
-    newUser = {
-      id,
-      role: 'seller',
-      name: cleanName,
-      email: cleanEmail,
-      phone: payload.phone,
-      passwordHash,
-      sellerStallId: `stall_${Date.now().toString(36)}`,
-      sellerStallName: studio,
-      sellerStallSlug: slug,
-      craftSpecialty: payload.craftSpecialty || 'Traditional Handcrafted Canvas & Khadi Totes',
-      stateOrigin: payload.stateOrigin || 'India',
-      gemUdyamId: payload.gemUdyamId || `UDYAM-${Date.now().toString().slice(-6)}`,
-      upiId: payload.upiId || `${slug}@okhdfcbank`,
-      registeredAt: new Date().toISOString(),
-    };
+    const { data: stall, error: stallError } = await supabase.from('stalls').insert({
+      user_id: data.user.id,
+      name: studio,
+      slug: slug,
+      craft_heritage: payload.craftSpecialty || 'Traditional Handcrafted Canvas & Khadi Totes',
+      location: payload.stateOrigin || 'India',
+      // Other fields can be updated later via dashboard
+    }).single();
+
+    if (stallError) console.error('Stall creation failed:', stallError);
   }
 
-  saveRegisteredAccounts([...existing, newUser]);
-  setUserSession(newUser);
-  return { success: true, user: newUser };
+  const userSession: UserSession = {
+    id: data.user.id,
+    role: payload.role,
+    name: cleanName,
+    email: cleanEmail,
+    phone: payload.phone,
+  };
+
+  setUserSession(userSession);
+  return { success: true, user: userSession };
 }
 
-export function loginUser(
+export async function loginUser(
   email: string,
   password?: string
-): { success: boolean; error?: string; user?: UserSession } {
+): Promise<{ success: boolean; error?: string; user?: UserSession }> {
+  const supabase = getSupabaseClient();
+  if (!supabase) return { success: false, error: 'Supabase client not initialized.' };
+
   const cleanEmail = email.toLowerCase().trim();
-  if (!cleanEmail) {
-    return { success: false, error: 'Email address is required.' };
-  }
+  if (!cleanEmail) return { success: false, error: 'Email address is required.' };
 
-  const accounts = getRegisteredAccounts();
-  const found = accounts.find((a) => a.email.toLowerCase() === cleanEmail);
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: cleanEmail,
+    password: password || '',
+  });
 
-  if (!found) {
-    return {
-      success: false,
-      error: 'No account found with this email. Please sign up first.',
-    };
-  }
+  if (error) return { success: false, error: error.message };
+  if (!data.user) return { success: false, error: 'Login failed.' };
 
-  // If password provided, verify hash
-  if (password && found.passwordHash) {
-    const enteredHash = simpleHash(password);
-    if (enteredHash !== found.passwordHash) {
-      return { success: false, error: 'Incorrect password. Please try again.' };
-    }
-  }
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', data.user.id)
+    .single();
 
-  setUserSession(found);
-  return { success: true, user: found };
+  if (!profile) return { success: false, error: 'User profile not found.' };
+
+  const userSession: UserSession = {
+    id: profile.id,
+    email: profile.email,
+    name: profile.name || 'User',
+    role: profile.role as UserRole,
+    phone: profile.phone,
+    avatar_url: profile.avatar_url,
+  };
+
+  setUserSession(userSession);
+  return { success: true, user: userSession };
 }
 
-export function logoutSession(): void {
+export async function logoutSession(): Promise<void> {
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    await supabase.auth.signOut();
+  }
   setUserSession(null);
 }

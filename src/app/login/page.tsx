@@ -81,13 +81,13 @@ function LoginForm() {
     return '/';
   };
 
-  const handleSignIn = (e: React.FormEvent) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
     setIsSubmitting(true);
 
-    setTimeout(() => {
-      const res = loginUser(email, password);
+    try {
+      const res = await loginUser(email, password);
       if (res.success && res.user) {
         // Enforce that user role matches target role if coming from strict gating
         if (paramRole && res.user.role !== paramRole) {
@@ -114,17 +114,20 @@ function LoginForm() {
       } else {
         setErrorMessage(res.error || 'Invalid email or password.');
       }
+    } catch (err) {
+      setErrorMessage('An unexpected error occurred during sign-in.');
+    } finally {
       setIsSubmitting(false);
-    }, 400);
+    }
   };
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
     setIsSubmitting(true);
 
-    setTimeout(() => {
-      const res = registerUser({
+    try {
+      const res = await registerUser({
         role,
         name,
         email,
@@ -161,8 +164,11 @@ function LoginForm() {
       } else {
         setErrorMessage(res.error || 'Failed to create account.');
       }
+    } catch (err) {
+      setErrorMessage('An unexpected error occurred during registration.');
+    } finally {
       setIsSubmitting(false);
-    }, 400);
+    }
   };
 
   return (

@@ -23,7 +23,7 @@ import {
   Landmark,
 } from 'lucide-react';
 import { useCartStore } from '@/hooks/useCartStore';
-import { getUserSession, setUserSession, switchRole, UserSession } from '@/lib/userSession';
+import { getUserSession, logoutSession, switchRole, UserSession } from '@/lib/userSession';
 import { OrderNotification } from '@/lib/types';
 import {
   getNotifications,
@@ -48,40 +48,55 @@ export function Navbar() {
   const [pendingCollabsCount, setPendingCollabsCount] = useState(0);
 
   useEffect(() => {
-    setMounted(true);
-    const initialSession = getUserSession();
-    setSession(initialSession);
+    let cancelled = false;
 
-    const roleTarget = initialSession?.role === 'seller' ? 'seller' : 'buyer';
-    setNotifications(getNotifications(roleTarget));
+    const loadSession = async () => {
+      const initialSession = await getUserSession();
+      if (cancelled) return;
+
+      setMounted(true);
+      setSession(initialSession);
+      const roleTarget = initialSession?.role === 'seller' ? 'seller' : 'buyer';
+      setNotifications(getNotifications(roleTarget));
+    };
 
     const handleSessionUpdate = () => {
-      const s = getUserSession();
-      setSession(s);
-      setNotifications(getNotifications(s?.role === 'seller' ? 'seller' : 'buyer'));
+      void (async () => {
+        const nextSession = await getUserSession();
+        if (cancelled) return;
+        setSession(nextSession);
+        setNotifications(getNotifications(nextSession?.role === 'seller' ? 'seller' : 'buyer'));
+      })();
     };
+
     const handleNotifUpdate = () => {
-      const current = getUserSession();
-      setNotifications(getNotifications(current?.role === 'seller' ? 'seller' : 'buyer'));
+      void (async () => {
+        const current = await getUserSession();
+        if (cancelled) return;
+        setNotifications(getNotifications(current?.role === 'seller' ? 'seller' : 'buyer'));
+      })();
     };
+
     const handleCollabsUpdate = () => {
       const collabs = getCollabProposals();
       setPendingCollabsCount(collabs.filter((c) => c.status === 'pending').length);
     };
 
+    void loadSession();
     handleCollabsUpdate();
 
     window.addEventListener('tote_session_changed', handleSessionUpdate);
     window.addEventListener('tote_notifications_updated', handleNotifUpdate);
     window.addEventListener('tote_collabs_updated', handleCollabsUpdate);
     return () => {
+      cancelled = true;
       window.removeEventListener('tote_session_changed', handleSessionUpdate);
       window.removeEventListener('tote_notifications_updated', handleNotifUpdate);
       window.removeEventListener('tote_collabs_updated', handleCollabsUpdate);
     };
   }, []);
 
-  const handleRoleToggle = (targetRole: 'buyer' | 'seller' | 'influencer') => {
+  const handleRoleToggle = async (targetRole: 'buyer' | 'seller' | 'influencer') => {
     setIsDropdownOpen(false);
     
     // Check if currently authenticated with targetRole
@@ -93,7 +108,7 @@ export function Navbar() {
     }
 
     // Try auto-switch if registered account exists for that role
-    const switchRes = switchRole(targetRole);
+    const switchRes = await switchRole(targetRole);
     if (switchRes.success && switchRes.user) {
       if (targetRole === 'seller') router.push('/dashboard');
       else if (targetRole === 'influencer') router.push('/influencer');
@@ -111,8 +126,8 @@ export function Navbar() {
     }
   };
 
-  const handleSignOut = () => {
-    setUserSession(null);
+  const handleSignOut = async () => {
+    await logoutSession();
     setSession(null);
     setIsDropdownOpen(false);
     router.push('/');

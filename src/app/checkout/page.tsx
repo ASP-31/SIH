@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { useCartStore } from '@/hooks/useCartStore';
 import { useToastStore } from '@/hooks/useToastStore';
-import { getUserSession } from '@/lib/userSession';
+import { getUserSession, UserSession } from '@/lib/userSession';
 import { saveNewOrder, formatINR } from '@/lib/demoData';
 import { sendOrderMessage, addNotification } from '@/lib/conversationService';
 import { Order, OrderItem, Address } from '@/lib/types';
@@ -37,22 +37,20 @@ export default function CheckoutPage() {
   } = useCartStore();
   const addToast = useToastStore((s) => s.addToast);
 
-  const [session, setSession] = useState(getUserSession());
+  const [session, setSession] = useState<UserSession | null>(null);
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1);
 
   // Step 1: Shipping Address Form
-  const [shippingAddress, setShippingAddress] = useState<Address>(
-    session?.addresses?.[0] || {
-      id: 'addr_new',
-      name: session?.name || '',
-      phone: session?.phone || '',
-      street: '',
-      city: '',
-      state: 'Karnataka',
-      postalCode: '',
-      country: 'India',
-    }
-  );
+  const [shippingAddress, setShippingAddress] = useState<Address>({
+    id: '',
+    name: '',
+    phone: '',
+    street: '',
+    city: '',
+    state: '',
+    postalCode: '',
+    country: '',
+  });
 
   // Step 2: Delivery Option
   const [deliveryMethod, setDeliveryMethod] = useState<'standard' | 'express'>('standard');
@@ -76,6 +74,35 @@ export default function CheckoutPage() {
   const grandTotal = subtotal + shippingTotal;
 
   useEffect(() => {
+    let cancelled = false;
+
+    const hydrateSession = async () => {
+      const currentSession = await getUserSession();
+      if (cancelled) return;
+
+      setSession(currentSession);
+      setShippingAddress(
+        currentSession?.addresses?.[0] || {
+          id: 'addr_new',
+          name: currentSession?.name || '',
+          phone: currentSession?.phone || '',
+          street: '',
+          city: '',
+          state: 'Karnataka',
+          postalCode: '',
+          country: 'India',
+        }
+      );
+    };
+
+    void hydrateSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     // If cart is empty and not on confirmation step, redirect home
     if (items.length === 0 && currentStep !== 4) {
       router.push('/cart');
@@ -94,7 +121,7 @@ export default function CheckoutPage() {
 
     setIsProcessing(true);
 
-    setTimeout(() => {
+    setTimeout(async () => {
       const generatedOrderId = `TOT-${Math.floor(10000 + Math.random() * 90000)}`;
       const enteredLast5 = buyerTransactionLast5.trim() || Math.floor(10000 + Math.random() * 90000).toString();
 
@@ -130,7 +157,7 @@ export default function CheckoutPage() {
         items: orderItems,
       };
 
-      saveNewOrder(newOrder);
+      await saveNewOrder(newOrder);
       setCompletedOrder(newOrder);
       clearCart();
       setIsProcessing(false);

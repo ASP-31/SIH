@@ -44,18 +44,31 @@ function MarketplaceContent() {
   const [activeSihStatement, setActiveSihStatement] = useState<SihProblemStatement | null>(null);
 
   useEffect(() => {
-    setProducts(getDemoProducts());
-    setStalls(getDemoStalls());
+    let cancelled = false;
+
+    const loadCatalog = async () => {
+      const [nextProducts, nextStalls] = await Promise.all([
+        getDemoProducts(),
+        getDemoStalls(),
+      ]);
+      if (cancelled) return;
+      setProducts(nextProducts);
+      setStalls(nextStalls);
+    };
+
+    void loadCatalog();
 
     if (referralRef) {
       recordReferralClick(referralRef, referralProd || undefined);
     }
 
-    const handleProductsChange = () => {
-      setProducts(getDemoProducts());
+    const handleProductsChange = async () => {
+      const nextProducts = await getDemoProducts();
+      if (!cancelled) setProducts(nextProducts);
     };
     window.addEventListener('tote_products_changed', handleProductsChange);
     return () => {
+      cancelled = true;
       window.removeEventListener('tote_products_changed', handleProductsChange);
     };
   }, [referralRef, referralProd]);
@@ -189,6 +202,7 @@ function MarketplaceContent() {
                     alt="Handloom Bag Making"
                     fill
                     priority
+                    sizes="(max-width: 1024px) 100vw, 42vw"
                     className="object-cover"
                   />
                   <div className="absolute top-2 left-2 px-2 py-1 bg-white border border-[#18181B] text-[10px] font-mono font-bold uppercase text-[#18181B]">

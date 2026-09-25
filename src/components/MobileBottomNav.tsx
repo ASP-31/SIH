@@ -29,11 +29,24 @@ export function MobileBottomNav() {
   const [isModeModalOpen, setIsModeModalOpen] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     setMounted(true);
-    setSession(getUserSession());
-    const handleUpdate = () => setSession(getUserSession());
+
+    const refreshSession = async () => {
+      const nextSession = await getUserSession();
+      if (!cancelled) setSession(nextSession);
+    };
+
+    const handleUpdate = () => {
+      void refreshSession();
+    };
+
+    void refreshSession();
     window.addEventListener('tote_session_changed', handleUpdate);
-    return () => window.removeEventListener('tote_session_changed', handleUpdate);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('tote_session_changed', handleUpdate);
+    };
   }, []);
 
   const isActive = (path: string) => {

@@ -14,7 +14,7 @@ import {
   LogOut,
   Sparkles,
 } from 'lucide-react';
-import { UserSession, switchRole, setUserSession } from '@/lib/userSession';
+import { UserSession, switchRole, logoutSession } from '@/lib/userSession';
 
 interface ModeSwitcherModalProps {
   isOpen: boolean;
@@ -33,7 +33,7 @@ export function ModeSwitcherModal({
 
   const currentRole = currentSession?.role || 'buyer';
 
-  const handleSelectMode = (targetRole: 'buyer' | 'seller' | 'influencer') => {
+  const handleSelectMode = async (targetRole: 'buyer' | 'seller' | 'influencer') => {
     onClose();
 
     // If already in target role
@@ -45,7 +45,7 @@ export function ModeSwitcherModal({
     }
 
     // Try switching if user already has registered account for target role
-    const switchRes = switchRole(targetRole);
+    const switchRes = await switchRole(targetRole);
     if (switchRes.success && switchRes.user) {
       if (targetRole === 'seller') router.push('/dashboard');
       else if (targetRole === 'influencer') router.push('/influencer');
@@ -62,8 +62,8 @@ export function ModeSwitcherModal({
     router.push(`/login?role=${targetRole}&redirect=${encodeURIComponent(redirectMap[targetRole])}`);
   };
 
-  const handleLogout = () => {
-    setUserSession(null);
+  const handleLogout = async () => {
+    await logoutSession();
     onClose();
     router.push('/');
   };

@@ -161,17 +161,22 @@ export default function SellerDashboardPage() {
     audioLang: '',
   });
 
-  const loadData = () => {
-    const currSession = getUserSession();
+  const loadData = async (signal?: AbortSignal) => {
+    const currSession = await getUserSession();
+    if (signal?.aborted) return;
+
     const effectiveStallId = currSession?.sellerStallId || stallId;
 
-    const orders = getDemoOrders();
+    const orders = await getDemoOrders();
+    if (signal?.aborted) return;
     setAllOrders(orders);
 
-    const b2b = getB2BOrders();
+    const b2b = await getB2BOrders();
+    if (signal?.aborted) return;
     setB2bOrders(b2b);
 
-    const stalls = getDemoStalls();
+    const stalls = await getDemoStalls();
+    if (signal?.aborted) return;
     let currentStall = stalls.find(
       (s) => s.id === effectiveStallId || (currSession?.sellerStallSlug && s.slug === currSession.sellerStallSlug)
     );
@@ -202,7 +207,8 @@ export default function SellerDashboardPage() {
         craft_origin_history: 'Centuries of Indian indigenous handloom and craft cluster heritage.',
         created_at: new Date().toISOString(),
       };
-      saveDemoStalls([...stalls, currentStall]);
+      await saveDemoStalls([...stalls, currentStall]);
+      if (signal?.aborted) return;
     }
 
     if (!currentStall) {
@@ -210,7 +216,8 @@ export default function SellerDashboardPage() {
     }
     setStall(currentStall);
 
-    const products = getDemoProducts();
+    const products = await getDemoProducts();
+    if (signal?.aborted) return;
     let matching = products.filter(
       (p) =>
         p.stall_id === effectiveStallId ||
@@ -229,33 +236,28 @@ export default function SellerDashboardPage() {
   };
 
   useEffect(() => {
+    const controller = new AbortController();
+    const { signal } = controller;
+
     setMounted(true);
-    const currSession = getUserSession();
-    setSession(currSession);
-
-    if (!currSession || currSession.role !== 'seller') {
-      return;
-    }
-
-    loadData();
-
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const tab = params.get('tab');
-      if (tab === 'collabs') setActiveTab('collabs');
-      else if (tab === 'b2b_hub') setActiveTab('b2b_hub');
-    }
 
     const handleNotifUpdate = () => {
-      setNotifications(getNotifications('seller'));
+      if (!signal.aborted) {
+        setNotifications(getNotifications('seller'));
+      }
     };
-    const handleOrdersUpdate = () => {
-      setAllOrders(getDemoOrders());
+    const handleOrdersUpdate = async () => {
+      if (signal.aborted) return;
+      const orders = await getDemoOrders();
+      if (!signal.aborted) setAllOrders(orders);
     };
-    const handleB2bUpdate = () => {
-      setB2bOrders(getB2BOrders());
+    const handleB2bUpdate = async () => {
+      if (signal.aborted) return;
+      const orders = await getB2BOrders();
+      if (!signal.aborted) setB2bOrders(orders);
     };
     const handleCollabsUpdate = () => {
+      if (signal.aborted) return;
       const collabs = getCollabProposalsForSeller(stallId);
       setSellerCollabs(collabs);
       if (activeSellerCollabChat) {
@@ -263,25 +265,54 @@ export default function SellerDashboardPage() {
         if (found) setActiveSellerCollabChat(found);
       }
     };
-
-    window.addEventListener('tote_notifications_updated', handleNotifUpdate);
-    window.addEventListener('tote_orders_updated', handleOrdersUpdate);
-    window.addEventListener('tote_b2b_orders_updated', handleB2bUpdate);
-    window.addEventListener('tote_collabs_updated', handleCollabsUpdate);
-    window.addEventListener('tote_clicks_updated', handleCollabsUpdate);
-
-    const handleProductsUpdate = () => {
-      setStallProducts(getDemoProducts().filter((p) => p.stall_id === stallId));
+    const handleProductsUpdate = async () => {
+      if (signal.aborted) return;
+      const products = await getDemoProducts();
+      if (!signal.aborted) {
+        setStallProducts(products.filter((p) => p.stall_id === stallId));
+      }
     };
-    window.addEventListener('tote_products_changed', handleProductsUpdate);
+
+    const initialize = async () => {
+      const currSession = await getUserSession();
+      if (signal.aborted) return;
+      setSession(currSession);
+
+      if (!currSession || currSession.role !== 'seller') {
+        return;
+      }
+
+      const loadPromise = loadData(signal);
+
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        const tab = params.get('tab');
+        if (tab === 'collabs') setActiveTab('collabs');
+        else if (tab === 'b2b_hub') setActiveTab('b2b_hub');
+
+        window.addEventListener('tote_notifications_updated', handleNotifUpdate);
+        window.addEventListener('tote_orders_updated', handleOrdersUpdate);
+        window.addEventListener('tote_b2b_orders_updated', handleB2bUpdate);
+        window.addEventListener('tote_collabs_updated', handleCollabsUpdate);
+        window.addEventListener('tote_clicks_updated', handleCollabsUpdate);
+        window.addEventListener('tote_products_changed', handleProductsUpdate);
+      }
+
+      await loadPromise;
+    };
+
+    void initialize();
 
     return () => {
-      window.removeEventListener('tote_notifications_updated', handleNotifUpdate);
-      window.removeEventListener('tote_orders_updated', handleOrdersUpdate);
-      window.removeEventListener('tote_b2b_orders_updated', handleB2bUpdate);
-      window.removeEventListener('tote_collabs_updated', handleCollabsUpdate);
-      window.removeEventListener('tote_clicks_updated', handleCollabsUpdate);
-      window.removeEventListener('tote_products_changed', handleProductsUpdate);
+      controller.abort();
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('tote_notifications_updated', handleNotifUpdate);
+        window.removeEventListener('tote_orders_updated', handleOrdersUpdate);
+        window.removeEventListener('tote_b2b_orders_updated', handleB2bUpdate);
+        window.removeEventListener('tote_collabs_updated', handleCollabsUpdate);
+        window.removeEventListener('tote_clicks_updated', handleCollabsUpdate);
+        window.removeEventListener('tote_products_changed', handleProductsUpdate);
+      }
     };
   }, [stallId, activeSellerCollabChat]);
 
@@ -305,7 +336,7 @@ export default function SellerDashboardPage() {
 
   const unreadNotifCount = notifications.filter((n) => !n.read).length;
 
-  const handleDirectMarkOutForDelivery = (order: Order, item: OrderItem) => {
+  const handleDirectMarkOutForDelivery = async (order: Order, item: OrderItem) => {
     const tracking = `IND-${Math.floor(100000000 + Math.random() * 900000000)}`;
     const carrierName = 'BlueDart Express Handloom Wing';
 
@@ -328,7 +359,8 @@ export default function SellerDashboardPage() {
         : o
     );
 
-    saveDemoOrders(updatedOrders);
+    await saveDemoOrders(updatedOrders);
+    await loadData();
     setAllOrders(updatedOrders);
 
     // Send system message to conversation
@@ -363,7 +395,7 @@ export default function SellerDashboardPage() {
   const netEarnings = grossSales - platformCommission;
 
   // Pipeline Actions
-  const handleAcceptOrder = (orderId: string, itemId: string) => {
+  const handleAcceptOrder = async (orderId: string, itemId: string) => {
     const updatedOrders = allOrders.map((o) => {
       if (o.id === orderId) {
         return {
@@ -373,7 +405,8 @@ export default function SellerDashboardPage() {
       }
       return o;
     });
-    saveDemoOrders(updatedOrders);
+    await saveDemoOrders(updatedOrders);
+    await loadData();
     setAllOrders(updatedOrders);
     addToast({
       title: 'Order Accepted',
@@ -382,7 +415,7 @@ export default function SellerDashboardPage() {
     });
   };
 
-  const handleConfirmUpiPayment = (e: React.FormEvent) => {
+  const handleConfirmUpiPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!verificationModalOrder) return;
     const cleanEntered = enteredVerificationDigits.trim();
@@ -406,7 +439,7 @@ export default function SellerDashboardPage() {
       return;
     }
 
-    const matched = confirmOrderPayment(verificationModalOrder.id, cleanEntered);
+    const matched = await confirmOrderPayment(verificationModalOrder.id, cleanEntered);
     if (matched) {
       sendOrderMessage(
         verificationModalOrder.id,
@@ -430,18 +463,18 @@ export default function SellerDashboardPage() {
 
       setVerificationModalOrder(null);
       setEnteredVerificationDigits('');
-      loadData();
+      await loadData();
     }
   };
 
-  const handleConfirmFulfillment = () => {
+  const handleConfirmFulfillment = async () => {
     if (!fulfillmentModalItem || !trackingNumber.trim()) return;
 
     const { orderId, item } = fulfillmentModalItem;
-    scheduleOrderDelivery(orderId, carrier, trackingNumber.trim(), deliveryDateEstimate);
+    await scheduleOrderDelivery(orderId, carrier, trackingNumber.trim(), deliveryDateEstimate);
     setFulfillmentModalItem(null);
     setTrackingNumber('');
-    loadData();
+    await loadData();
 
     sendOrderMessage(
       orderId,
@@ -466,9 +499,9 @@ export default function SellerDashboardPage() {
   };
 
   // Product CRUD
-  const handleSaveProduct = (e: React.FormEvent) => {
+  const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    const all = getDemoProducts();
+    const all = await getDemoProducts();
 
     if (editingProduct) {
       const updated = all.map((p) =>
@@ -495,7 +528,8 @@ export default function SellerDashboardPage() {
             }
           : p
       );
-      saveDemoProducts(updated);
+      await saveDemoProducts(updated);
+      await loadData();
       setStallProducts(
         updated.filter(
           (p) =>
@@ -539,7 +573,8 @@ export default function SellerDashboardPage() {
         created_at: new Date().toISOString(),
       };
       const updated = [newProd, ...all];
-      saveDemoProducts(updated);
+      await saveDemoProducts(updated);
+      await loadData();
       setStallProducts(
         updated.filter(
           (p) =>
@@ -577,10 +612,11 @@ export default function SellerDashboardPage() {
     setIsProductModalOpen(true);
   };
 
-  const handleDeleteProduct = (prodId: string) => {
-    const all = getDemoProducts();
+  const handleDeleteProduct = async (prodId: string) => {
+    const all = await getDemoProducts();
     const updated = all.filter((p) => p.id !== prodId);
-    saveDemoProducts(updated);
+    await saveDemoProducts(updated);
+    await loadData();
     setStallProducts(updated.filter((p) => p.stall_id === stallId));
     addToast({ title: 'Product removed', message: 'Bag removed from catalog', type: 'info' });
   };
@@ -1292,9 +1328,9 @@ export default function SellerDashboardPage() {
                               </button>
                               <button
                                 type="button"
-                                onClick={() => {
-                                  resolveOrderDispute(order.id);
-                                  loadData();
+                                onClick={async () => {
+                                  await resolveOrderDispute(order.id);
+                                  await loadData();
                                   addToast({ title: 'Dispute Resolved', message: `Order #${order.id} dispute marked resolved.`, type: 'success' });
                                 }}
                                 className="py-1.5 px-3 rounded-lg border border-rose-300 text-rose-800 font-semibold text-[11px] hover:bg-rose-100"
@@ -3294,14 +3330,14 @@ export default function SellerDashboardPage() {
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  updateB2BOrderStatus(
+                onClick={async () => {
+                  await updateB2BOrderStatus(
                     isConsignmentModalOpen.id,
                     'bulk_dispatched',
                     consignmentInput.trim()
                   );
                   setIsConsignmentModalOpen(null);
-                  loadData();
+                  await loadData();
                   addToast({
                     title: 'Consignment Dispatched!',
                     message: `Bulk tracking ${consignmentInput.trim()} synchronized with GeM / CPSE portal.`,
@@ -3324,7 +3360,9 @@ export default function SellerDashboardPage() {
           order={chatOrder}
           currentRole="seller"
           onClose={() => setChatOrder(null)}
-          onOrderUpdated={() => loadData()}
+          onOrderUpdated={async () => {
+            await loadData();
+          }}
         />
       )}
     </div>

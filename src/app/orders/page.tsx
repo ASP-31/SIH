@@ -23,6 +23,7 @@ import {
   Send,
 } from 'lucide-react';
 import { Order, OrderItemStatus } from '@/lib/types';
+import { UserSession } from '@/lib/userSession';
 import {
   getDemoOrders,
   saveDemoOrders,
@@ -39,7 +40,7 @@ export default function BuyerOrdersPage() {
   const addToast = useToastStore((s) => s.addToast);
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [session, setSession] = useState(getUserSession());
+  const [session, setSession] = useState<UserSession | null>(null);
   const [activeTab, setActiveTab] = useState<'orders' | 'profile'>('orders');
   const [chatOrder, setChatOrder] = useState<Order | null>(null);
   const [disputeModalOrder, setDisputeModalOrder] = useState<Order | null>(null);
@@ -47,11 +48,26 @@ export default function BuyerOrdersPage() {
   const [disputeNotes, setDisputeNotes] = useState('');
 
   useEffect(() => {
-    const loaded = getDemoOrders();
-    setOrders(loaded);
-    if (loaded.length > 0) {
-      setSelectedOrder(loaded[0]);
-    }
+    let cancelled = false;
+
+    const loadOrders = async () => {
+      const [loaded, currentSession] = await Promise.all([
+        getDemoOrders(),
+        getUserSession(),
+      ]);
+      if (cancelled) return;
+
+      setOrders(loaded);
+      setSession(currentSession);
+      if (loaded.length > 0) {
+        setSelectedOrder(loaded[0]);
+      }
+    };
+
+    void loadOrders();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const getStatusBadge = (status: OrderItemStatus) => {
@@ -110,7 +126,7 @@ export default function BuyerOrdersPage() {
     }
   };
 
-  const handleMarkItemReceived = (
+  const handleMarkItemReceived = async (
     orderId: string,
     itemId: string,
     productId: string,
@@ -129,14 +145,14 @@ export default function BuyerOrdersPage() {
       return o;
     });
 
-    saveDemoOrders(updatedOrders);
+    await saveDemoOrders(updatedOrders);
     setOrders(updatedOrders);
 
     const updatedSelected = updatedOrders.find((o) => o.id === orderId) || null;
     setSelectedOrder(updatedSelected);
 
     // 2. CRITICAL USER REQUIREMENT: remove the item from marketplace!
-    removeProductFromMarketplace(productId);
+    await removeProductFromMarketplace(productId);
 
     // 3. Post system message to conversation
     sendOrderMessage(
@@ -162,11 +178,11 @@ export default function BuyerOrdersPage() {
     });
   };
 
-  const handleReportDisputeSubmit = (e: React.FormEvent) => {
+  const handleReportDisputeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!disputeModalOrder) return;
     const fullIssue = `${disputeReason}${disputeNotes ? `: ${disputeNotes}` : ''}`;
-    reportOrderDispute(disputeModalOrder.id, fullIssue);
+    await reportOrderDispute(disputeModalOrder.id, fullIssue);
 
     sendOrderMessage(
       disputeModalOrder.id,

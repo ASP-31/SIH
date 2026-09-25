@@ -75,23 +75,37 @@ export default function InfluencerPage() {
   const [copiedLink, setCopiedLink] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     setMounted(true);
-    const curr = getUserSession();
-    setSession(curr);
 
-    const handle = curr?.influencerProfile?.handle?.replace('@', '').toLowerCase() || 'creator';
-    setProducts(getDemoProducts());
-    setCollabs(getCollabProposalsForInfluencer(handle));
+    const loadPageData = async () => {
+      const [currentSession, demoProducts] = await Promise.all([
+        getUserSession(),
+        getDemoProducts(),
+      ]);
+      if (cancelled) return;
 
-    const handleUpdate = () => {
-      const refreshed = getUserSession();
+      setSession(currentSession);
+      setProducts(demoProducts);
+
+      const handle =
+        currentSession?.influencerProfile?.handle?.replace('@', '').toLowerCase() || 'creator';
+      setCollabs(getCollabProposalsForInfluencer(handle));
+    };
+
+    const handleUpdate = async () => {
+      const refreshed = await getUserSession();
+      if (cancelled) return;
       const h = refreshed?.influencerProfile?.handle?.replace('@', '').toLowerCase() || 'creator';
       setCollabs(getCollabProposalsForInfluencer(h));
     };
 
+    void loadPageData();
+
     window.addEventListener('tote_collabs_updated', handleUpdate);
     window.addEventListener('tote_clicks_updated', handleUpdate);
     return () => {
+      cancelled = true;
       window.removeEventListener('tote_collabs_updated', handleUpdate);
       window.removeEventListener('tote_clicks_updated', handleUpdate);
     };
