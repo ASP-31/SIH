@@ -26,12 +26,12 @@ import { Order, OrderItemStatus } from '@/lib/types';
 import { UserSession } from '@/lib/userSession';
 import {
   getDemoOrders,
-  saveDemoOrders,
   removeProductFromMarketplace,
   formatINR,
   reportOrderDispute,
+  updateOrderItemStatus,
 } from '@/lib/demoData';
-import { sendOrderMessage, addNotification } from '@/lib/conversationService';
+import { sendOrderMessage } from '@/lib/conversationService';
 import { getUserSession } from '@/lib/userSession';
 import { useToastStore } from '@/hooks/useToastStore';
 import { OrderChatModal } from '@/components/OrderChatModal';
@@ -132,7 +132,17 @@ export default function BuyerOrdersPage() {
     productId: string,
     productTitle: string
   ) => {
-    // 1. Update order status
+    try {
+      await updateOrderItemStatus(orderId, itemId, 'delivered');
+    } catch (error) {
+      addToast({
+        title: 'Could not confirm delivery',
+        message: error instanceof Error ? error.message : 'Please try again in a moment.',
+        type: 'error',
+      });
+      return;
+    }
+
     const updatedOrders = orders.map((o) => {
       if (o.id === orderId) {
         return {
@@ -145,7 +155,6 @@ export default function BuyerOrdersPage() {
       return o;
     });
 
-    await saveDemoOrders(updatedOrders);
     setOrders(updatedOrders);
 
     const updatedSelected = updatedOrders.find((o) => o.id === orderId) || null;
@@ -162,15 +171,6 @@ export default function BuyerOrdersPage() {
       `✅ Delivery Confirmed: ${selectedOrder?.buyer_name || 'Buyer'} confirmed receipt of "${productTitle}". This unique handcrafted piece has been delivered and removed from the active marketplace!`
     );
 
-    // 4. Send notification to seller
-    addNotification({
-      target_role: 'seller',
-      order_id: orderId,
-      product_id: productId,
-      title: 'Order Confirmed Received! 🎉',
-      message: `${selectedOrder?.buyer_name || 'Buyer'} marked "${productTitle}" as received. Handcrafted piece removed from marketplace.`,
-    });
-
     addToast({
       title: 'Order Marked as Received!',
       message: `Confirmed! "${productTitle}" has been archived and removed from the marketplace.`,
@@ -182,7 +182,7 @@ export default function BuyerOrdersPage() {
     e.preventDefault();
     if (!disputeModalOrder) return;
     const fullIssue = `${disputeReason}${disputeNotes ? `: ${disputeNotes}` : ''}`;
-    await reportOrderDispute(disputeModalOrder.id, fullIssue);
+    const disputeSaved = await reportOrderDispute(disputeModalOrder.id, fullIssue);
 
     sendOrderMessage(
       disputeModalOrder.id,
@@ -191,12 +191,14 @@ export default function BuyerOrdersPage() {
       `⚠️ ISSUE REPORTED: "${fullIssue}". I would like to discuss and resolve this directly.`
     );
 
-    addNotification({
-      target_role: 'seller',
-      order_id: disputeModalOrder.id,
-      title: 'Issue Reported by Buyer ⚠️',
-      message: `Buyer reported an issue on Order #${disputeModalOrder.id}: ${fullIssue}`,
-    });
+    if (!disputeSaved) {
+      addToast({
+        title: 'Could not submit report',
+        message: 'Please sign in and try again.',
+        type: 'error',
+      });
+      return;
+    }
 
     const updated = orders.map((o) =>
       o.id === disputeModalOrder.id
@@ -214,7 +216,7 @@ export default function BuyerOrdersPage() {
 
     addToast({
       title: 'Dispute / Issue Reported',
-      message: 'Your report has been logged and sent to the artisan. Direct chat has been opened.',
+      message: 'The artisan has been notified and can reply in this chat.',
       type: 'info',
     });
 

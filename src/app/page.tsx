@@ -29,7 +29,7 @@ import {
   INITIAL_STALLS,
   SIH_PROBLEM_STATEMENTS,
 } from '@/lib/demoData';
-import { recordReferralClick } from '@/lib/influencerService';
+import { captureReferralAttribution, recordReferralClick } from '@/lib/referralAttribution';
 import { ProductCard } from '@/components/ProductCard';
 
 function MarketplaceContent() {
@@ -59,7 +59,16 @@ function MarketplaceContent() {
     void loadCatalog();
 
     if (referralRef) {
-      recordReferralClick(referralRef, referralProd || undefined);
+      captureReferralAttribution({
+        trackingCode: referralRef,
+        refCode: referralRef,
+        productId: referralProd || null,
+      });
+      void recordReferralClick({
+        trackingCode: referralRef,
+        refCode: referralRef,
+        productId: referralProd || null,
+      });
     }
 
     const handleProductsChange = async () => {

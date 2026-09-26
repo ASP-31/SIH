@@ -23,7 +23,10 @@ import {
   CheckCircle2,
   ThumbsUp,
   Plus,
+  Bell,
+  BellRing,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { Stall, Product, ArtistReview } from '@/lib/types';
 import {
   getDemoStalls,
@@ -36,6 +39,11 @@ import {
 import { ProductCard } from '@/components/ProductCard';
 import { useToastStore } from '@/hooks/useToastStore';
 import { getUserSession, UserSession } from '@/lib/userSession';
+import {
+  fetchStallFollowerCount,
+  isFollowingStall,
+  setStallSubscription,
+} from '@/lib/notificationService';
 
 interface StallPageProps {
   params: Promise<{
@@ -46,6 +54,7 @@ interface StallPageProps {
 export default function ArtisanStallPage({ params }: StallPageProps) {
   const resolvedParams = use(params);
   const slug = resolvedParams.slug;
+  const router = useRouter();
   const addToast = useToastStore((s) => s.addToast);
   const [session, setSession] = useState<UserSession | null>(null);
 
@@ -55,6 +64,9 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [audioSeconds, setAudioSeconds] = useState(0);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isFollowPending, setIsFollowPending] = useState(false);
+  const [stallFollowers, setStallFollowers] = useState(0);
 
   // Review Form state
   const [newReviewRating, setNewReviewRating] = useState(5);
@@ -114,6 +126,14 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
       if (!foundStall) return;
 
       setStall(foundStall);
+
+      const [following, followerCount] = await Promise.all([
+        isFollowingStall(foundStall.id),
+        fetchStallFollowerCount(foundStall.id),
+      ]);
+      if (cancelled) return;
+      setIsFollowing(following);
+      setStallFollowers(followerCount);
 
       const allProducts = await getDemoProducts();
       if (cancelled) return;
@@ -180,6 +200,57 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
       title: 'Stall link copied',
       message: `Share ${stall.name} with friends.`,
       type: 'success',
+    });
+  };
+
+  const handleFollow = async () => {
+    if (!stall) return;
+
+    if (!session) {
+      addToast({
+        title: 'Sign in to follow',
+        message: 'Create a free buyer account to get restock and sale alerts.',
+        type: 'info',
+      });
+      router.push(`/login?redirect=${encodeURIComponent(`/stall/${slug}`)}`);
+      return;
+    }
+
+    if (session.sellerStallId === stall.id) {
+      addToast({
+        title: 'This is your stall',
+        message: 'You are already following your own craft.',
+        type: 'info',
+      });
+      return;
+    }
+
+    setIsFollowPending(true);
+    const next = !isFollowing;
+    setIsFollowing(next);
+    if (next) setStallFollowers((count) => count + 1);
+    else setStallFollowers((count) => Math.max(0, count - 1));
+
+    const ok = await setStallSubscription(stall.id, next);
+    setIsFollowPending(false);
+
+    if (!ok) {
+      setIsFollowing(!next);
+      setStallFollowers((count) => Math.max(0, count + (next ? -1 : 1)));
+      addToast({
+        title: 'Could not update follow',
+        message: 'Please try again in a moment.',
+        type: 'error',
+      });
+      return;
+    }
+
+    addToast({
+      title: next ? `Following ${stall.name}` : `Unfollowed ${stall.name}`,
+      message: next
+        ? 'You will be notified about restocks and artisan sales.'
+        : 'You will no longer receive stall alerts.',
+      type: next ? 'success' : 'info',
     });
   };
 
@@ -251,6 +322,28 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
 
               {/* Action Buttons */}
               <div className="flex items-center gap-2 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={handleFollow}
+                  disabled={isFollowPending}
+                  className={`flex-1 sm:flex-none py-2 px-4 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors disabled:opacity-60 ${
+                    isFollowing
+                      ? 'border border-emerald-600 bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
+                      : 'bg-[#18181B] text-white hover:bg-[#27272A]'
+                  }`}
+                >
+                  {isFollowing ? (
+                    <>
+                      <BellRing className="w-3.5 h-3.5" />
+                      <span>Following{stallFollowers > 0 ? ` • ${stallFollowers}` : ''}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Bell className="w-3.5 h-3.5" />
+                      <span>Follow Stall</span>
+                    </>
+                  )}
+                </button>
                 <button
                   type="button"
                   onClick={handleShare}

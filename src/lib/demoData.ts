@@ -1,5 +1,6 @@
-import { Stall, Product, Order, User, Address, SihProblemStatement, ArtistReview, B2BPurchaseOrder } from './types';
+import { Stall, Product, Order, OrderItem, User, Address, SihProblemStatement, ArtistReview, B2BPurchaseOrder } from './types';
 import { getSupabaseClient } from './supabase';
+import { readReferralAttribution } from './referralAttribution';
 
 export const INITIAL_PRODUCTS: Product[] = [];
 
@@ -145,7 +146,7 @@ export async function getDemoProducts(): Promise<Product[]> {
   if (!supabase) return [];
 
   const { data, error } = await supabase
-    .from('products')
+    .from('products_catalog')
     .select('*')
     .order('created_at', { ascending: false });
 
@@ -156,23 +157,215 @@ export async function getDemoProducts(): Promise<Product[]> {
   return data as Product[];
 }
 
+const PRODUCT_WRITE_FIELDS = [
+  'id',
+  'stall_id',
+  'title',
+  'slug',
+  'description',
+  'price',
+  'original_price',
+  'stock',
+  'material',
+  'dimensions',
+  'capacity_liters',
+  'strap_drop',
+  'colors',
+  'images',
+  'original_image_url',
+  'enhanced_image_url',
+  'cloudinary_public_id',
+  'selected_image_url',
+  'category',
+  'state_origin',
+  'odop_cluster',
+  'craft_technique',
+  'craft_story',
+  'loom_heritage',
+  'audio_story_title',
+  'audio_story_url',
+  'is_gi_tagged',
+  'care_instructions',
+  'b2b_moq_tiers',
+  'gem_specs',
+  'ondc_publish_status',
+  'is_active',
+  'is_featured',
+  'rating',
+  'reviews_count',
+  'created_at',
+] as const;
+
+function toProductRow(product: Product): Record<string, unknown> {
+  const row: Record<string, unknown> = {};
+  for (const field of PRODUCT_WRITE_FIELDS) {
+    const value = (product as unknown as Record<string, unknown>)[field];
+    if (value !== undefined) row[field] = value;
+  }
+  return row;
+}
+
 export async function saveDemoProducts(products: Product[]): Promise<void> {
   const supabase = getSupabaseClient();
   if (!supabase) return;
 
-  const { error } = await supabase
-    .from('products')
-    .upsert(products);
+  const rows = products.map(toProductRow);
 
+  const { error } = await supabase.from('products').upsert(rows);
   if (error) console.error('Error saving products:', error);
 }
 
-export async function getDemoOrders(): Promise<Order[]> {
-  return [];
+interface OrderRow extends Record<string, unknown> {
+  id: string;
+  order_items?: OrderItemRow[];
 }
 
-export async function saveDemoOrders(orders: Order[]): Promise<void> {
-  // TODO: Implement order persistence
+interface OrderItemRow extends Record<string, unknown> {
+  id: string;
+  order_id: string;
+  product_id: string | null;
+  stall_id: string;
+  stall_name: string | null;
+  title: string;
+  price_at_purchase: number;
+  quantity: number;
+  image_url: string | null;
+  status: OrderItem['status'];
+  tracking_number: string | null;
+  carrier: string | null;
+  shipped_at: string | null;
+}
+
+function mapOrderItem(row: OrderItemRow): OrderItem {
+  return {
+    id: String(row.id),
+    order_id: String(row.order_id),
+    product_id: row.product_id ? String(row.product_id) : '',
+    stall_id: String(row.stall_id),
+    stall_name: row.stall_name ?? undefined,
+    title: String(row.title),
+    price_at_purchase: Number(row.price_at_purchase),
+    quantity: Number(row.quantity),
+    image_url: row.image_url ?? '',
+    status: row.status,
+    tracking_number: row.tracking_number ?? undefined,
+    carrier: row.carrier ?? undefined,
+    shipped_at: row.shipped_at ?? undefined,
+  };
+}
+
+function mapOrder(row: OrderRow): Order {
+  const items = (row.order_items ?? [])
+    .map(mapOrderItem)
+    .sort((a, b) => a.id.localeCompare(b.id));
+
+  return {
+    id: String(row.id),
+    buyer_id: String(row.buyer_id),
+    buyer_name: String(row.buyer_name),
+    buyer_email: String(row.buyer_email),
+    buyer_phone: (row.buyer_phone as string) ?? '',
+    shipping_address: (row.shipping_address as unknown as Order['shipping_address']) ?? ({} as Order['shipping_address']),
+    delivery_method: row.delivery_method as Order['delivery_method'],
+    payment_method: row.payment_method as Order['payment_method'],
+    payment_status: row.payment_status as Order['payment_status'],
+    buyer_transaction_last5: (row.buyer_transaction_last5 as string) ?? undefined,
+    seller_confirmed_last5: (row.seller_confirmed_last5 as string) ?? undefined,
+    payment_verified_at: (row.payment_verified_at as string) ?? undefined,
+    delivery_scheduled_date: (row.delivery_scheduled_date as string) ?? undefined,
+    carrier: (row.carrier as string) ?? undefined,
+    tracking_number: (row.tracking_number as string) ?? undefined,
+    dispute_status: (row.dispute_status as Order['dispute_status']) ?? 'none',
+    dispute_issue: (row.dispute_issue as string) ?? undefined,
+    dispute_created_at: (row.dispute_created_at as string) ?? undefined,
+    subtotal: Number(row.subtotal ?? 0),
+    shipping_total: Number(row.shipping_total ?? 0),
+    total_amount: Number(row.total_amount ?? 0),
+    created_at: String(row.created_at),
+    items,
+  };
+}
+
+export async function getDemoOrders(): Promise<Order[]> {
+  const supabase = getSupabaseClient();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from('orders')
+    .select('*, order_items(*)')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching orders:', error);
+    return [];
+  }
+
+  return ((data ?? []) as unknown as OrderRow[]).map(mapOrder);
+}
+
+export async function saveNewOrder(order: Order): Promise<Order> {
+  const supabase = getSupabaseClient();
+  if (!supabase) throw new Error('Supabase is not configured');
+
+  const referralCode = typeof window !== 'undefined' ? readReferralAttribution()?.trackingCode : null;
+
+  const { data, error } = await supabase.rpc('place_order', {
+    p_buyer_name: order.buyer_name,
+    p_buyer_email: order.buyer_email,
+    p_buyer_phone: order.buyer_phone,
+    p_shipping_address: order.shipping_address as unknown as Record<string, unknown>,
+    p_delivery_method: order.delivery_method,
+    p_payment_method: order.payment_method,
+    p_payment_last5: order.buyer_transaction_last5 ?? null,
+    p_shipping_total: order.shipping_total,
+    p_items: order.items.map((item) => ({
+      product_id: item.product_id,
+      quantity: item.quantity,
+      image_url: item.image_url,
+    })),
+    p_referral_code: referralCode,
+  });
+
+  if (error) {
+    console.error('Error placing order:', error);
+    throw new Error(error.message);
+  }
+
+  const created = data as unknown as OrderRow;
+  const { data: items } = await supabase
+    .from('order_items')
+    .select('*')
+    .eq('order_id', created.id)
+    .order('created_at', { ascending: true });
+
+  created.order_items = (items ?? []) as unknown as OrderItemRow[];
+
+  return mapOrder(created);
+}
+
+export async function updateOrderItemStatus(
+  orderId: string,
+  itemId: string,
+  status: OrderItem['status'],
+  options?: { carrier?: string; trackingNumber?: string }
+): Promise<OrderItem | null> {
+  const supabase = getSupabaseClient();
+  if (!supabase) return null;
+
+  const { data, error } = await supabase.rpc('set_order_item_status', {
+    p_order_id: orderId,
+    p_item_id: itemId,
+    p_status: status,
+    p_carrier: options?.carrier ?? null,
+    p_tracking_number: options?.trackingNumber ?? null,
+  });
+
+  if (error) {
+    console.error('Error updating order item status:', error);
+    throw new Error(error.message);
+  }
+
+  return data ? mapOrderItem(data as unknown as OrderItemRow) : null;
 }
 
 export async function getB2BOrders(): Promise<B2BPurchaseOrder[]> {
@@ -211,31 +404,6 @@ export function exportGemCatalogJson(products: Product[]): string {
     },
   }));
   return JSON.stringify(gemSchemaCatalog, null, 2);
-}
-
-export async function saveNewOrder(order: Order): Promise<void> {
-  const supabase = getSupabaseClient();
-  if (!supabase) return;
-
-  // Decrement stock
-  for (const item of order.items) {
-    const { data: product } = await supabase
-      .from('products')
-      .select('stock')
-      .eq('id', item.product_id)
-      .single();
-
-    if (product) {
-      const newStock = Math.max(0, product.stock - item.quantity);
-      await supabase
-        .from('products')
-        .update({
-          stock: newStock,
-          is_active: newStock > 0
-        })
-        .eq('id', item.product_id);
-    }
-  }
 }
 
 export async function removeProductFromMarketplace(productId: string): Promise<void> {
@@ -309,26 +477,43 @@ export async function confirmOrderPayment(orderId: string, sellerLast5: string):
 
   const { data: order } = await supabase
     .from('orders')
-    .select('*')
+    .select('buyer_transaction_last5')
     .eq('id', orderId)
     .single();
 
   if (!order) return false;
 
   const hasMatchingPayment = order.buyer_transaction_last5?.trim() === sellerLast5.trim();
+  if (!hasMatchingPayment) return false;
 
-  if (hasMatchingPayment) {
-    // Update order payment status
-    await supabase
-      .from('orders')
-      .update({
-        payment_status: 'confirmed',
-        payment_verified_at: new Date().toISOString(),
-      })
-      .eq('id', orderId);
+  const { error } = await supabase.rpc('verify_order_payment', {
+    p_order_id: orderId,
+    p_last5: sellerLast5.trim(),
+  });
+
+  if (error) {
+    console.error('Error verifying payment:', error);
+    return false;
   }
 
-  return hasMatchingPayment;
+  return true;
+}
+
+export async function submitOrderPaymentProof(orderId: string, last5: string): Promise<boolean> {
+  const supabase = getSupabaseClient();
+  if (!supabase) return false;
+
+  const { error } = await supabase.rpc('submit_order_payment', {
+    p_order_id: orderId,
+    p_last5: last5,
+  });
+
+  if (error) {
+    console.error('Error submitting payment proof:', error);
+    return false;
+  }
+
+  return true;
 }
 
 export async function scheduleOrderDelivery(
@@ -336,14 +521,52 @@ export async function scheduleOrderDelivery(
   carrier: string,
   trackingNumber: string,
   scheduledDate: string
-): Promise<void> {
-  // Implementation
+): Promise<boolean> {
+  const supabase = getSupabaseClient();
+  if (!supabase) return false;
+
+  const { error } = await supabase.rpc('schedule_order_delivery', {
+    p_order_id: orderId,
+    p_carrier: carrier,
+    p_tracking_number: trackingNumber,
+    p_date: scheduledDate,
+  });
+
+  if (error) {
+    console.error('Error scheduling delivery:', error);
+    return false;
+  }
+
+  return true;
 }
 
-export async function reportOrderDispute(orderId: string, issue: string): Promise<void> {
-  // Implementation
+export async function reportOrderDispute(orderId: string, issue: string): Promise<boolean> {
+  const supabase = getSupabaseClient();
+  if (!supabase) return false;
+
+  const { error } = await supabase.rpc('report_order_dispute', {
+    p_order_id: orderId,
+    p_issue: issue,
+  });
+
+  if (error) {
+    console.error('Error reporting dispute:', error);
+    return false;
+  }
+
+  return true;
 }
 
-export async function resolveOrderDispute(orderId: string): Promise<void> {
-  // Implementation
+export async function resolveOrderDispute(orderId: string): Promise<boolean> {
+  const supabase = getSupabaseClient();
+  if (!supabase) return false;
+
+  const { error } = await supabase.rpc('resolve_order_dispute', { p_order_id: orderId });
+
+  if (error) {
+    console.error('Error resolving dispute:', error);
+    return false;
+  }
+
+  return true;
 }

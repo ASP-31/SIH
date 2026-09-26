@@ -29,24 +29,94 @@ export async function switchRole(targetRole: UserRole): Promise<{ success: boole
   const supabase = getSupabaseClient();
   if (!supabase) return { success: false };
 
+  const session = await getUserSession();
+  if (!session) return { success: false };
+
   const { data: profile, error } = await supabase
     .from('profiles')
+    .update({ role: targetRole })
+    .eq('id', session.id)
     .select('*')
-    .eq('role', targetRole)
     .single();
 
   if (error || !profile) return { success: false };
 
-  // In a real Supabase auth flow, switching roles usually means switching accounts.
-  // For this MVP, we'll simulate it by updating the local session if we found a profile.
-  // Note: Actual account switching requires re-auth.
-  const session = await getUserSession();
-  if (session && session.id === profile.id) {
-    setUserSession({ ...session, role: targetRole });
-    return { success: true, user: { ...session, role: targetRole } };
+  // The database is the source of truth for roles; mirror it into the cached session.
+  const updated = await buildUserSession(profile, session.email, profile.email);
+  setUserSession(updated);
+  return { success: true, user: updated };
+}
+
+interface ProfileRow {
+  id: string;
+  email?: string | null;
+  name?: string | null;
+  role?: string | null;
+  phone?: string | null;
+  avatar_url?: string | null;
+  gem_udyam_id?: string | null;
+  upi_id?: string | null;
+}
+
+interface StallRow {
+  id: string;
+  name?: string | null;
+  slug?: string | null;
+  craft_heritage?: string | null;
+  state?: string | null;
+  location?: string | null;
+}
+
+async function buildUserSession(
+  profile: ProfileRow,
+  fallbackEmail: string,
+  authEmail: string
+): Promise<UserSession> {
+  const supabase = getSupabaseClient();
+  const role = (profile.role || 'buyer') as UserRole;
+
+  const base: UserSession = {
+    id: profile.id,
+    email: authEmail || profile.email || fallbackEmail,
+    name: profile.name || 'User',
+    role,
+    phone: profile.phone || undefined,
+    avatar_url: profile.avatar_url || undefined,
+  };
+
+  if (!supabase) return base;
+
+  const { data: addresses } = await supabase
+    .from('addresses')
+    .select('*')
+    .eq('user_id', profile.id)
+    .order('is_default', { ascending: false });
+
+  if (addresses?.length) base.addresses = addresses as UserSession['addresses'];
+
+  if (role === 'seller' || role === 'admin') {
+    const { data: stall } = await supabase
+      .from('stalls')
+      .select('id, name, slug, craft_heritage, state, location')
+      .eq('user_id', profile.id)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    const row = stall as StallRow | null;
+    if (row) {
+      base.sellerStallId = row.id;
+      base.sellerStallSlug = row.slug || undefined;
+      base.sellerStallName = row.name || undefined;
+      base.craftSpecialty = row.craft_heritage || undefined;
+      base.stateOrigin = row.state || row.location || undefined;
+    }
+
+    base.gemUdyamId = profile.gem_udyam_id || undefined;
+    base.upiId = profile.upi_id || undefined;
   }
 
-  return { success: false };
+  return base;
 }
 
 export async function getUserSession(): Promise<UserSession | null> {
@@ -66,14 +136,7 @@ export async function getUserSession(): Promise<UserSession | null> {
 
   if (!profile) return null;
 
-  return {
-    id: profile.id,
-    email: profile.email,
-    name: profile.name || 'User',
-    role: profile.role as UserRole,
-    phone: profile.phone,
-    avatar_url: profile.avatar_url,
-  };
+  return buildUserSession(profile as ProfileRow, session.user.email || '', session.user.email || '');
 }
 
 export function setUserSession(session: UserSession | null): void {
@@ -136,6 +199,17 @@ export async function registerUser(payload: {
   if (authError) return { success: false, error: authError.message };
   if (!data.user) return { success: false, error: 'User creation failed.' };
 
+  // When email confirmation is required, Supabase returns a user but no session.
+  // Faking a local session here would leave getUserSession() resolving to null on
+  // every later read, so fail loudly and ask the user to confirm first.
+  if (!data.session) {
+    return {
+      success: false,
+      error:
+        'Account created. Check your inbox to confirm your email address, then sign in.',
+    };
+  }
+
   // The handle_new_user() trigger in Supabase handles the profile insertion.
   // Now we handle the role-specific extra data.
 
@@ -167,7 +241,7 @@ export async function registerUser(payload: {
     const studio = payload.studioName?.trim() || `${cleanName} Handlooms`;
     const slug = studio.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
-    const { data: stall, error: stallError } = await supabase.from('stalls').insert({
+    const { error: stallError } = await supabase.from('stalls').insert({
       user_id: data.user.id,
       name: studio,
       slug: slug,
@@ -217,14 +291,11 @@ export async function loginUser(
 
   if (!profile) return { success: false, error: 'User profile not found.' };
 
-  const userSession: UserSession = {
-    id: profile.id,
-    email: profile.email,
-    name: profile.name || 'User',
-    role: profile.role as UserRole,
-    phone: profile.phone,
-    avatar_url: profile.avatar_url,
-  };
+  const userSession = await buildUserSession(
+    profile as ProfileRow,
+    data.user.email || cleanEmail,
+    data.user.email || cleanEmail
+  );
 
   setUserSession(userSession);
   return { success: true, user: userSession };

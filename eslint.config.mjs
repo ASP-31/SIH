@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Standalone Node verification scripts, not application modules. They run
+    // under plain `node` and are CommonJS, so the app's import rules and the
+    // Next.js rulesets do not apply to them.
+    "scripts/**",
   ]),
 ]);
 

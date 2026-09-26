@@ -16,9 +16,8 @@ import {
 } from 'lucide-react';
 import { Order, OrderItemStatus, OrderMessage } from '@/lib/types';
 import {
-  getOrderMessages,
+  fetchOrderMessages,
   sendOrderMessage,
-  addNotification,
 } from '@/lib/conversationService';
 import { removeProductFromMarketplace, formatINR } from '@/lib/demoData';
 import { useToastStore } from '@/hooks/useToastStore';
@@ -48,8 +47,7 @@ export function OrderChatModal({
   const isDelivered = firstItem?.status === 'delivered';
 
   const loadMessages = () => {
-    const list = getOrderMessages(localOrder.id);
-    setMessages(list);
+    void fetchOrderMessages(localOrder.id).then(setMessages);
   };
 
   useEffect(() => {
@@ -79,23 +77,6 @@ export function OrderChatModal({
         : firstItem?.stall_name || 'Artisan';
 
     sendOrderMessage(localOrder.id, senderName, currentRole, inputMessage.trim());
-
-    // Also dispatch notification to counterpart
-    if (currentRole === 'buyer') {
-      addNotification({
-        target_role: 'seller',
-        order_id: localOrder.id,
-        title: `Message from ${localOrder.buyer_name} 💬`,
-        message: inputMessage.trim(),
-      });
-    } else {
-      addNotification({
-        target_role: 'buyer',
-        order_id: localOrder.id,
-        title: `Message from ${firstItem?.stall_name || 'Artisan'} 💬`,
-        message: inputMessage.trim(),
-      });
-    }
 
     setInputMessage('');
   };
@@ -128,14 +109,6 @@ export function OrderChatModal({
       'system',
       `🚚 Status Update: Artisan has marked this order as OUT FOR DELIVERY via ${carrierName} (Waybill: ${tracking}).`
     );
-
-    // Notify buyer
-    addNotification({
-      target_role: 'buyer',
-      order_id: localOrder.id,
-      title: 'Order is Out for Delivery! 🚚',
-      message: `Your tote "${firstItem?.title}" is on its way via ${carrierName}. Please mark as received once delivered.`,
-    });
 
     addToast({
       title: 'Marked Out for Delivery',
@@ -171,14 +144,6 @@ export function OrderChatModal({
       'system',
       `✅ Delivery Confirmed: ${localOrder.buyer_name} has received the bag. This slow-crafted artisan item has been completed and removed from the active marketplace!`
     );
-
-    // Notify seller
-    addNotification({
-      target_role: 'seller',
-      order_id: localOrder.id,
-      title: 'Order Confirmed Received! 🎉',
-      message: `${localOrder.buyer_name} marked "${firstItem?.title}" as received. Livelihood payout released to your account.`,
-    });
 
     addToast({
       title: 'Order Marked as Received!',
