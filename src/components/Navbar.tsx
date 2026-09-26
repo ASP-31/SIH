@@ -13,7 +13,6 @@ import {
   ArrowRight,
   LogOut,
   ChevronDown,
-  Bell,
   Layers,
   FileSpreadsheet,
   CheckCircle2,
@@ -23,14 +22,10 @@ import {
   Landmark,
 } from 'lucide-react';
 import { useCartStore } from '@/hooks/useCartStore';
-import { getUserSession, setUserSession, switchRole, UserSession } from '@/lib/userSession';
-import { OrderNotification } from '@/lib/types';
-import {
-  getNotifications,
-  markAllNotificationsAsRead,
-} from '@/lib/conversationService';
+import { getUserSession, logoutSession, switchRole, UserSession } from '@/lib/userSession';
 import { getCollabProposals } from '@/lib/influencerService';
 import { ModeSwitcherModal } from './ModeSwitcherModal';
+import NotificationBell from './NotificationBell';
 
 export function Navbar() {
   const pathname = usePathname();
@@ -43,45 +38,46 @@ export function Navbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isModeModalOpen, setIsModeModalOpen] = useState(false);
   const [navSearch, setNavSearch] = useState('');
-  const [notifications, setNotifications] = useState<OrderNotification[]>([]);
-  const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [pendingCollabsCount, setPendingCollabsCount] = useState(0);
 
   useEffect(() => {
-    setMounted(true);
-    const initialSession = getUserSession();
-    setSession(initialSession);
+    let cancelled = false;
 
-    const roleTarget = initialSession?.role === 'seller' ? 'seller' : 'buyer';
-    setNotifications(getNotifications(roleTarget));
+    const loadSession = async () => {
+      const initialSession = await getUserSession();
+      if (cancelled) return;
+
+      setMounted(true);
+      setSession(initialSession);
+    };
 
     const handleSessionUpdate = () => {
-      const s = getUserSession();
-      setSession(s);
-      setNotifications(getNotifications(s?.role === 'seller' ? 'seller' : 'buyer'));
+      void (async () => {
+        const nextSession = await getUserSession();
+        if (cancelled) return;
+        setSession(nextSession);
+      })();
     };
-    const handleNotifUpdate = () => {
-      const current = getUserSession();
-      setNotifications(getNotifications(current?.role === 'seller' ? 'seller' : 'buyer'));
-    };
-    const handleCollabsUpdate = () => {
-      const collabs = getCollabProposals();
+
+    const handleCollabsUpdate = async () => {
+      const collabs = await getCollabProposals();
+      if (cancelled) return;
       setPendingCollabsCount(collabs.filter((c) => c.status === 'pending').length);
     };
 
-    handleCollabsUpdate();
+    void loadSession();
+    void handleCollabsUpdate();
 
     window.addEventListener('tote_session_changed', handleSessionUpdate);
-    window.addEventListener('tote_notifications_updated', handleNotifUpdate);
     window.addEventListener('tote_collabs_updated', handleCollabsUpdate);
     return () => {
+      cancelled = true;
       window.removeEventListener('tote_session_changed', handleSessionUpdate);
-      window.removeEventListener('tote_notifications_updated', handleNotifUpdate);
       window.removeEventListener('tote_collabs_updated', handleCollabsUpdate);
     };
   }, []);
 
-  const handleRoleToggle = (targetRole: 'buyer' | 'seller' | 'influencer') => {
+  const handleRoleToggle = async (targetRole: 'buyer' | 'seller' | 'influencer') => {
     setIsDropdownOpen(false);
     
     // Check if currently authenticated with targetRole
@@ -93,7 +89,7 @@ export function Navbar() {
     }
 
     // Try auto-switch if registered account exists for that role
-    const switchRes = switchRole(targetRole);
+    const switchRes = await switchRole(targetRole);
     if (switchRes.success && switchRes.user) {
       if (targetRole === 'seller') router.push('/dashboard');
       else if (targetRole === 'influencer') router.push('/influencer');
@@ -111,8 +107,8 @@ export function Navbar() {
     }
   };
 
-  const handleSignOut = () => {
-    setUserSession(null);
+  const handleSignOut = async () => {
+    await logoutSession();
     setSession(null);
     setIsDropdownOpen(false);
     router.push('/');
@@ -384,74 +380,7 @@ export function Navbar() {
               <div id="google_translate_element" className="hidden sm:block text-left" />
 
               {/* Notification Bell (Seller & Buyer) */}
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setIsNotifOpen(!isNotifOpen)}
-                  className={`p-2 border-2 ${
-                    isSeller
-                      ? 'border-zinc-700 bg-zinc-900 text-white hover:bg-zinc-800'
-                      : 'border-[#18181B] bg-white text-[#18181B] hover:bg-[#FAFAF8]'
-                  }`}
-                  aria-label="Notifications"
-                >
-                  <Bell className="w-4 h-4" />
-                  {notifications.filter((n) => !n.read).length > 0 && (
-                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-500 rounded-full ring-1 ring-[#18181B] animate-pulse" />
-                  )}
-                </button>
-
-                {/* Notifications Dropdown */}
-                {isNotifOpen && (
-                  <div
-                    className={`absolute right-0 mt-2 w-80 sm:w-96 border-2 border-[#18181B] p-3 z-50 shadow-[4px_4px_0px_0px_#18181B] ${
-                      isSeller ? 'bg-[#18181B] text-white' : 'bg-white text-[#18181B]'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between pb-2 border-b border-zinc-700 font-mono">
-                      <span className="text-xs font-bold uppercase">
-                        Alerts ({notifications.filter((n) => !n.read).length})
-                      </span>
-                      {notifications.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const r = session?.role === 'seller' ? 'seller' : 'buyer';
-                            markAllNotificationsAsRead(r);
-                            setNotifications(getNotifications(r));
-                          }}
-                          className="text-[10px] text-amber-400 hover:underline"
-                        >
-                          Mark all read
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="max-h-64 overflow-y-auto divide-y divide-zinc-700 mt-2 font-mono">
-                      {notifications.length === 0 ? (
-                        <div className="py-4 text-center text-xs text-zinc-400">
-                          No notifications.
-                        </div>
-                      ) : (
-                        notifications.slice(0, 6).map((notif) => (
-                          <div key={notif.id} className="py-2 text-xs">
-                            <div className="flex justify-between items-baseline">
-                              <span className="font-bold">{notif.title}</span>
-                              <span className="text-[10px] text-zinc-400">
-                                {new Date(notif.created_at).toLocaleTimeString([], {
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                })}
-                              </span>
-                            </div>
-                            <p className="text-[11px] text-zinc-400 mt-0.5">{notif.message}</p>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
+              <NotificationBell variant={isSeller ? 'dark' : 'light'} />
 
               {/* 3-WAY ROLE SWITCHER BUTTON & USER MENU */}
               <div className="relative">

@@ -44,10 +44,9 @@ import {
   Eye,
   Loader2,
 } from 'lucide-react';
-import { Order, OrderItem, Product, Stall, OrderItemStatus, OrderNotification, CollabProposal } from '@/lib/types';
+import { Order, OrderItem, Product, Stall, OrderItemStatus, CollabProposal } from '@/lib/types';
 import {
   getDemoOrders,
-  saveDemoOrders,
   getDemoProducts,
   saveDemoProducts,
   INITIAL_PRODUCTS,
@@ -60,15 +59,11 @@ import {
   getB2BOrders,
   updateB2BOrderStatus,
   exportGemCatalogJson,
+  updateOrderItemStatus,
 } from '@/lib/demoData';
 import { B2BPurchaseOrder } from '@/lib/types';
-import {
-  getNotifications,
-  markNotificationAsRead,
-  markAllNotificationsAsRead,
-  sendOrderMessage,
-  addNotification,
-} from '@/lib/conversationService';
+import { sendOrderMessage } from '@/lib/conversationService';
+import { fetchStallFollowerCount } from '@/lib/notificationService';
 import {
   getCollabProposalsForSeller,
   updateCollabStatus,
@@ -79,6 +74,8 @@ import { useToastStore } from '@/hooks/useToastStore';
 import { OrderChatModal } from '@/components/OrderChatModal';
 import { VoiceInputButton } from '@/components/VoiceInputButton';
 import { ProductPhotoUploader } from '@/components/ProductPhotoUploader';
+import NotificationBell from '@/components/NotificationBell';
+import { useNotificationStore } from '@/hooks/useNotificationStore';
 
 export default function SellerDashboardPage() {
   const router = useRouter();
@@ -106,10 +103,15 @@ export default function SellerDashboardPage() {
   const [isConsignmentModalOpen, setIsConsignmentModalOpen] = useState<B2BPurchaseOrder | null>(null);
   const [consignmentInput, setConsignmentInput] = useState('');
 
-  // Chat & Notifications state
+  // Chat state
   const [chatOrder, setChatOrder] = useState<Order | null>(null);
-  const [notifications, setNotifications] = useState<OrderNotification[]>([]);
-  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [stallFollowers, setStallFollowers] = useState(0);
+
+  const notifications = useNotificationStore((s) => s.notifications);
+  const markAllNotificationsAsRead = useNotificationStore((s) => s.markAllRead);
+  const latestUnreadOrderAlert = notifications.find(
+    (n) => !n.read_at && n.category === 'orders' && n.metadata?.order_id
+  );
 
   // Modals
   const [fulfillmentModalItem, setFulfillmentModalItem] = useState<{
@@ -163,17 +165,22 @@ export default function SellerDashboardPage() {
     audioLang: '',
   });
 
-  const loadData = () => {
-    const currSession = getUserSession();
+  const loadData = async (signal?: AbortSignal) => {
+    const currSession = await getUserSession();
+    if (signal?.aborted) return;
+
     const effectiveStallId = currSession?.sellerStallId || stallId;
 
-    const orders = getDemoOrders();
+    const orders = await getDemoOrders();
+    if (signal?.aborted) return;
     setAllOrders(orders);
 
-    const b2b = getB2BOrders();
+    const b2b = await getB2BOrders();
+    if (signal?.aborted) return;
     setB2bOrders(b2b);
 
-    const stalls = getDemoStalls();
+    const stalls = await getDemoStalls();
+    if (signal?.aborted) return;
     let currentStall = stalls.find(
       (s) => s.id === effectiveStallId || (currSession?.sellerStallSlug && s.slug === currSession.sellerStallSlug)
     );
@@ -204,7 +211,8 @@ export default function SellerDashboardPage() {
         craft_origin_history: 'Centuries of Indian indigenous handloom and craft cluster heritage.',
         created_at: new Date().toISOString(),
       };
-      saveDemoStalls([...stalls, currentStall]);
+      await saveDemoStalls([...stalls, currentStall]);
+      if (signal?.aborted) return;
     }
 
     if (!currentStall) {
@@ -212,7 +220,8 @@ export default function SellerDashboardPage() {
     }
     setStall(currentStall);
 
-    const products = getDemoProducts();
+    const products = await getDemoProducts();
+    if (signal?.aborted) return;
     let matching = products.filter(
       (p) =>
         p.stall_id === effectiveStallId ||
@@ -225,65 +234,83 @@ export default function SellerDashboardPage() {
       matching = INITIAL_PRODUCTS.filter((p) => p.stall_id === 'stall_1');
     }
     setStallProducts(matching);
+    setStallFollowers(await fetchStallFollowerCount(effectiveStallId));
 
-    setNotifications(getNotifications('seller'));
-    setSellerCollabs(getCollabProposalsForSeller(effectiveStallId));
+    setSellerCollabs(await getCollabProposalsForSeller(effectiveStallId));
   };
 
   useEffect(() => {
+    const controller = new AbortController();
+    const { signal } = controller;
+
     setMounted(true);
-    const currSession = getUserSession();
-    setSession(currSession);
 
-    if (!currSession || currSession.role !== 'seller') {
-      return;
-    }
-
-    loadData();
-
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const tab = params.get('tab');
-      if (tab === 'collabs') setActiveTab('collabs');
-      else if (tab === 'b2b_hub') setActiveTab('b2b_hub');
-    }
-
-    const handleNotifUpdate = () => {
-      setNotifications(getNotifications('seller'));
+    const handleOrdersUpdate = async () => {
+      if (signal.aborted) return;
+      const orders = await getDemoOrders();
+      if (!signal.aborted) setAllOrders(orders);
     };
-    const handleOrdersUpdate = () => {
-      setAllOrders(getDemoOrders());
+    const handleB2bUpdate = async () => {
+      if (signal.aborted) return;
+      const orders = await getB2BOrders();
+      if (!signal.aborted) setB2bOrders(orders);
     };
-    const handleB2bUpdate = () => {
-      setB2bOrders(getB2BOrders());
-    };
-    const handleCollabsUpdate = () => {
-      const collabs = getCollabProposalsForSeller(stallId);
+    const handleCollabsUpdate = async () => {
+      if (signal.aborted) return;
+      const collabs = await getCollabProposalsForSeller(stallId);
+      if (signal.aborted) return;
       setSellerCollabs(collabs);
       if (activeSellerCollabChat) {
         const found = collabs.find((c) => c.id === activeSellerCollabChat.id);
         if (found) setActiveSellerCollabChat(found);
       }
     };
-
-    window.addEventListener('tote_notifications_updated', handleNotifUpdate);
-    window.addEventListener('tote_orders_updated', handleOrdersUpdate);
-    window.addEventListener('tote_b2b_orders_updated', handleB2bUpdate);
-    window.addEventListener('tote_collabs_updated', handleCollabsUpdate);
-    window.addEventListener('tote_clicks_updated', handleCollabsUpdate);
-
-    const handleProductsUpdate = () => {
-      setStallProducts(getDemoProducts().filter((p) => p.stall_id === stallId));
+    const handleProductsUpdate = async () => {
+      if (signal.aborted) return;
+      const products = await getDemoProducts();
+      if (!signal.aborted) {
+        setStallProducts(products.filter((p) => p.stall_id === stallId));
+      }
     };
-    window.addEventListener('tote_products_changed', handleProductsUpdate);
+
+    const initialize = async () => {
+      const currSession = await getUserSession();
+      if (signal.aborted) return;
+      setSession(currSession);
+
+      if (!currSession || currSession.role !== 'seller') {
+        return;
+      }
+
+      const loadPromise = loadData(signal);
+
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        const tab = params.get('tab');
+        if (tab === 'collabs') setActiveTab('collabs');
+        else if (tab === 'b2b_hub') setActiveTab('b2b_hub');
+
+        window.addEventListener('tote_orders_updated', handleOrdersUpdate);
+        window.addEventListener('tote_b2b_orders_updated', handleB2bUpdate);
+        window.addEventListener('tote_collabs_updated', handleCollabsUpdate);
+        window.addEventListener('tote_clicks_updated', handleCollabsUpdate);
+        window.addEventListener('tote_products_changed', handleProductsUpdate);
+      }
+
+      await loadPromise;
+    };
+
+    void initialize();
 
     return () => {
-      window.removeEventListener('tote_notifications_updated', handleNotifUpdate);
-      window.removeEventListener('tote_orders_updated', handleOrdersUpdate);
-      window.removeEventListener('tote_b2b_orders_updated', handleB2bUpdate);
-      window.removeEventListener('tote_collabs_updated', handleCollabsUpdate);
-      window.removeEventListener('tote_clicks_updated', handleCollabsUpdate);
-      window.removeEventListener('tote_products_changed', handleProductsUpdate);
+      controller.abort();
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('tote_orders_updated', handleOrdersUpdate);
+        window.removeEventListener('tote_b2b_orders_updated', handleB2bUpdate);
+        window.removeEventListener('tote_collabs_updated', handleCollabsUpdate);
+        window.removeEventListener('tote_clicks_updated', handleCollabsUpdate);
+        window.removeEventListener('tote_products_changed', handleProductsUpdate);
+      }
     };
   }, [stallId, activeSellerCollabChat]);
 
@@ -305,56 +332,38 @@ export default function SellerDashboardPage() {
   );
   const completedItems = stallOrderItems.filter((x) => x.item.status === 'delivered');
 
-  const unreadNotifCount = notifications.filter((n) => !n.read).length;
+  const markAllOrderAlertsRead = () => markAllNotificationsAsRead('orders');
 
-  const handleDirectMarkOutForDelivery = (order: Order, item: OrderItem) => {
-    const tracking = `IND-${Math.floor(100000000 + Math.random() * 900000000)}`;
-    const carrierName = 'BlueDart Express Handloom Wing';
-
-    const updatedOrders = allOrders.map((o) =>
-      o.id === order.id
+  const applyItemStatus = (orderId: string, itemId: string, status: OrderItemStatus) =>
+    allOrders.map((o) =>
+      o.id === orderId
         ? {
             ...o,
-            items: o.items.map((it) =>
-              it.id === item.id
-                ? {
-                    ...it,
-                    status: 'out_for_delivery' as OrderItemStatus,
-                    tracking_number: tracking,
-                    carrier: carrierName,
-                    shipped_at: new Date().toISOString(),
-                  }
-                : it
-            ),
+            items: o.items.map((it) => (it.id === itemId ? { ...it, status } : it)),
           }
         : o
     );
 
-    saveDemoOrders(updatedOrders);
-    setAllOrders(updatedOrders);
+  const persistItemStatus = async (
+    orderId: string,
+    itemId: string,
+    status: OrderItemStatus,
+    details?: { carrier?: string; trackingNumber?: string }
+  ) => {
+    try {
+      await updateOrderItemStatus(orderId, itemId, status, details);
+    } catch (error) {
+      addToast({
+        title: 'Could not update order',
+        message: error instanceof Error ? error.message : 'Please try again in a moment.',
+        type: 'error',
+      });
+      return false;
+    }
 
-    // Send system message to conversation
-    sendOrderMessage(
-      order.id,
-      'Tote Dispatch Bot',
-      'system',
-      `🚚 Status Update: Artisan has marked "${item.title}" as OUT FOR DELIVERY via ${carrierName} (Waybill: ${tracking}).`
-    );
-
-    // Notify buyer
-    addNotification({
-      target_role: 'buyer',
-      order_id: order.id,
-      product_id: item.product_id,
-      title: 'Item is Out for Delivery! 🚚',
-      message: `Your tote "${item.title}" has been marked Out for Delivery. Mark as received once it arrives!`,
-    });
-
-    addToast({
-      title: 'Marked Out for Delivery!',
-      message: `Order #${order.id} marked Out for Delivery. Buyer notified.`,
-      type: 'success',
-    });
+    setAllOrders(applyItemStatus(orderId, itemId, status));
+    await loadData();
+    return true;
   };
 
   // Financial Calculations
@@ -365,26 +374,29 @@ export default function SellerDashboardPage() {
   const netEarnings = grossSales - platformCommission;
 
   // Pipeline Actions
-  const handleAcceptOrder = (orderId: string, itemId: string) => {
-    const updatedOrders = allOrders.map((o) => {
-      if (o.id === orderId) {
-        return {
-          ...o,
-          items: o.items.map((it) => (it.id === itemId ? { ...it, status: 'ready_to_pack' as const } : it)),
-        };
-      }
-      return o;
-    });
-    saveDemoOrders(updatedOrders);
-    setAllOrders(updatedOrders);
+  const handleAcceptOrder = async (orderId: string, itemId: string) => {
+    const saved = await persistItemStatus(orderId, itemId, 'ready_to_pack');
+    if (!saved) return;
+
     addToast({
       title: 'Order Accepted',
-      message: 'Moved to Ready to Pack.',
+      message: 'Buyer notified. Moved to Ready to Pack.',
       type: 'success',
     });
   };
 
-  const handleConfirmUpiPayment = (e: React.FormEvent) => {
+  const handleDeclineOrder = async (orderId: string, itemId: string) => {
+    const saved = await persistItemStatus(orderId, itemId, 'cancelled');
+    if (!saved) return;
+
+    addToast({
+      title: 'Order Declined',
+      message: 'The buyer has been notified that this item cannot be fulfilled.',
+      type: 'info',
+    });
+  };
+
+  const handleConfirmUpiPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!verificationModalOrder) return;
     const cleanEntered = enteredVerificationDigits.trim();
@@ -408,7 +420,7 @@ export default function SellerDashboardPage() {
       return;
     }
 
-    const matched = confirmOrderPayment(verificationModalOrder.id, cleanEntered);
+    const matched = await confirmOrderPayment(verificationModalOrder.id, cleanEntered);
     if (matched) {
       sendOrderMessage(
         verificationModalOrder.id,
@@ -416,13 +428,6 @@ export default function SellerDashboardPage() {
         'seller',
         `✅ Namaste ${verificationModalOrder.buyer_name}! I have verified your UPI payment receipt in my bank account (UTR ending in ...${cleanEntered}). Payment is confirmed! We are preparing your bag now.`
       );
-
-      addNotification({
-        target_role: 'buyer',
-        order_id: verificationModalOrder.id,
-        title: 'Payment Confirmed by Artisan! ✅',
-        message: `${stall?.name || 'Artisan Workshop'} matched your UTR and confirmed payment. Crafting is underway.`,
-      });
 
       addToast({
         title: 'Payment Confirmed! 🎉',
@@ -432,18 +437,74 @@ export default function SellerDashboardPage() {
 
       setVerificationModalOrder(null);
       setEnteredVerificationDigits('');
-      loadData();
+      await loadData();
     }
   };
 
-  const handleConfirmFulfillment = () => {
+  // The database enforces a strict pipeline (pending -> ready_to_pack -> shipped ->
+  // out_for_delivery), so dispatch has to walk the chain instead of jumping stages.
+  const FULFILMENT_CHAIN: OrderItemStatus[] = ['ready_to_pack', 'shipped', 'out_for_delivery'];
+
+  const advanceToOutForDelivery = async (
+    orderId: string,
+    itemId: string,
+    from: OrderItemStatus,
+    details: { carrier: string; trackingNumber: string }
+  ): Promise<boolean> => {
+    const start = FULFILMENT_CHAIN.indexOf(from);
+    if (start === -1) {
+      addToast({
+        title: 'Cannot dispatch yet',
+        message: `An item that is already "${from.replace(/_/g, ' ')}" cannot be dispatched again.`,
+        type: 'error',
+      });
+      return false;
+    }
+
+    for (let i = start; i < FULFILMENT_CHAIN.length; i++) {
+      const step = FULFILMENT_CHAIN[i];
+      const isFinal = i === FULFILMENT_CHAIN.length - 1;
+
+      try {
+        await updateOrderItemStatus(orderId, itemId, step, isFinal ? details : undefined);
+      } catch (error) {
+        addToast({
+          title: 'Could not update order',
+          message: error instanceof Error ? error.message : 'Please try again in a moment.',
+          type: 'error',
+        });
+        return false;
+      }
+
+      setAllOrders(applyItemStatus(orderId, itemId, step));
+    }
+
+    await loadData();
+    return true;
+  };
+
+  const handleConfirmFulfillment = async () => {
     if (!fulfillmentModalItem || !trackingNumber.trim()) return;
 
     const { orderId, item } = fulfillmentModalItem;
-    scheduleOrderDelivery(orderId, carrier, trackingNumber.trim(), deliveryDateEstimate);
+    const scheduled = await scheduleOrderDelivery(orderId, carrier, trackingNumber.trim(), deliveryDateEstimate);
+    if (!scheduled) {
+      addToast({
+        title: 'Could not schedule delivery',
+        message: 'Please refresh and try again.',
+        type: 'error',
+      });
+      return;
+    }
+
+    const advanced = await advanceToOutForDelivery(orderId, item.id, item.status, {
+      carrier,
+      trackingNumber: trackingNumber.trim(),
+    });
+    if (!advanced) return;
+
     setFulfillmentModalItem(null);
     setTrackingNumber('');
-    loadData();
 
     sendOrderMessage(
       orderId,
@@ -451,14 +512,6 @@ export default function SellerDashboardPage() {
       'system',
       `🚚 Status Update: Artisan has scheduled delivery and marked "${item.title}" as OUT FOR DELIVERY via ${carrier} (Waybill: ${trackingNumber.trim()}). Estimated Arrival: ${deliveryDateEstimate}.`
     );
-
-    addNotification({
-      target_role: 'buyer',
-      order_id: orderId,
-      product_id: item.product_id,
-      title: 'Item Out for Delivery! 🚚',
-      message: `Your tote "${item.title}" is out for delivery via ${carrier}. Estimated arrival: ${deliveryDateEstimate}.`,
-    });
 
     addToast({
       title: 'Delivery Scheduled & Shipped!',
@@ -468,9 +521,9 @@ export default function SellerDashboardPage() {
   };
 
   // Product CRUD
-  const handleSaveProduct = (e: React.FormEvent) => {
+  const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    const all = getDemoProducts();
+    const all = await getDemoProducts();
 
     if (editingProduct) {
       const updated = all.map((p) =>
@@ -497,7 +550,8 @@ export default function SellerDashboardPage() {
             }
           : p
       );
-      saveDemoProducts(updated);
+      await saveDemoProducts(updated);
+      await loadData();
       setStallProducts(
         updated.filter(
           (p) =>
@@ -541,7 +595,8 @@ export default function SellerDashboardPage() {
         created_at: new Date().toISOString(),
       };
       const updated = [newProd, ...all];
-      saveDemoProducts(updated);
+      await saveDemoProducts(updated);
+      await loadData();
       setStallProducts(
         updated.filter(
           (p) =>
@@ -625,10 +680,11 @@ export default function SellerDashboardPage() {
     setIsProductModalOpen(true);
   };
 
-  const handleDeleteProduct = (prodId: string) => {
-    const all = getDemoProducts();
+  const handleDeleteProduct = async (prodId: string) => {
+    const all = await getDemoProducts();
     const updated = all.filter((p) => p.id !== prodId);
-    saveDemoProducts(updated);
+    await saveDemoProducts(updated);
+    await loadData();
     setStallProducts(updated.filter((p) => p.stall_id === stallId));
     addToast({ title: 'Product removed', message: 'Bag removed from catalog', type: 'info' });
   };
@@ -700,75 +756,7 @@ export default function SellerDashboardPage() {
 
           <div className="flex items-center gap-2.5 w-full md:w-auto">
             {/* Notification Center */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setIsNotifOpen(!isNotifOpen)}
-                className="relative p-2.5 rounded-full border border-[#E5E5E0] bg-[#FFFFFF] hover:bg-[#F2F0EB] text-[#18181B] transition-colors"
-                aria-label="Order Notifications"
-              >
-                <Bell className="w-4 h-4" />
-                {unreadNotifCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-rose-600 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center animate-pulse">
-                    {unreadNotifCount}
-                  </span>
-                )}
-              </button>
-
-              {isNotifOpen && (
-                <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-[#FFFFFF] border border-[#E5E5E0] shadow-elevated p-3 z-50 animate-fade-in space-y-2">
-                  <div className="flex items-center justify-between pb-2 border-b border-[#E5E5E0]">
-                    <span className="font-bold text-xs text-[#18181B] flex items-center gap-1.5">
-                      <Bell className="w-3.5 h-3.5 text-amber-600" />
-                      Artisan Studio Alerts
-                    </span>
-                    {unreadNotifCount > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          markAllNotificationsAsRead('seller');
-                          setNotifications(getNotifications('seller'));
-                        }}
-                        className="text-[10px] text-amber-800 font-bold hover:underline"
-                      >
-                        Mark all read
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="max-h-60 overflow-y-auto space-y-2 divide-y divide-[#E5E5E0]/50 pr-1">
-                    {notifications.length === 0 ? (
-                      <p className="text-center py-4 text-xs text-[#71717A]">No new alerts</p>
-                    ) : (
-                      notifications.map((n) => (
-                        <div
-                          key={n.id}
-                          onClick={() => {
-                            markNotificationAsRead(n.id);
-                            setNotifications(getNotifications('seller'));
-                            const ord = allOrders.find((o) => o.id === n.order_id);
-                            if (ord) setChatOrder(ord);
-                            setIsNotifOpen(false);
-                          }}
-                          className={`pt-2 text-xs cursor-pointer hover:bg-[#FAFAF8] p-1.5 rounded-lg transition-colors ${
-                            !n.read ? 'bg-amber-50/70 font-semibold' : 'text-[#71717A]'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-[11px] text-[#18181B]">{n.title}</span>
-                            <span className="text-[9px] text-[#71717A]">
-                              {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-[#18181B] mt-0.5 line-clamp-2">{n.message}</p>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
+            <NotificationBell />
             <Link
               href={`/stall/${stall?.slug || 'earthstitch-studio'}`}
               target="_blank"
@@ -810,7 +798,7 @@ export default function SellerDashboardPage() {
         </div>
 
         {/* Real-time Order Notification Alert Banner */}
-        {notifications.some((n) => !n.read && n.title.includes('Order')) && (
+        {latestUnreadOrderAlert && (
           <div className="rounded-2xl bg-amber-50 border border-amber-300 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-subtle animate-fade-in">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm">
@@ -820,21 +808,16 @@ export default function SellerDashboardPage() {
                 <p className="font-bold text-xs sm:text-sm text-amber-950">
                   New Customer Order Alert!
                 </p>
-                <p className="text-xs text-amber-800">
-                  {notifications.find((n) => !n.read && n.title.includes('Order'))?.message ||
-                    'Someone bought your handcrafted tote! Ready for fulfillment.'}
-                </p>
+                <p className="text-xs text-amber-800">{latestUnreadOrderAlert.body}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => {
-                  const firstNewNotif = notifications.find((n) => !n.read && n.title.includes('Order'));
-                  if (firstNewNotif) {
-                    const ord = allOrders.find((o) => o.id === firstNewNotif.order_id);
-                    if (ord) setChatOrder(ord);
-                  }
+                  const orderId = latestUnreadOrderAlert.metadata?.order_id;
+                  const ord = allOrders.find((o) => o.id === orderId);
+                  if (ord) setChatOrder(ord);
                 }}
                 className="py-1.5 px-3 rounded-full border border-amber-400 bg-white text-amber-900 text-xs font-semibold hover:bg-amber-100 flex items-center gap-1"
               >
@@ -846,8 +829,7 @@ export default function SellerDashboardPage() {
                 onClick={() => {
                   setActiveTab('pipeline');
                   setPipelineSubTab('pending');
-                  markAllNotificationsAsRead('seller');
-                  setNotifications(getNotifications('seller'));
+                  void markAllOrderAlertsRead();
                 }}
                 className="py-1.5 px-4 rounded-full bg-[#18181B] text-white text-xs font-semibold hover:bg-[#27272A] whitespace-nowrap"
               >
@@ -858,7 +840,7 @@ export default function SellerDashboardPage() {
         )}
 
         {/* FINANCIAL SUMMARY CARDS */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
           <div className="bg-[#FFFFFF] rounded-2xl border border-[#E5E5E0] p-4 sm:p-5 shadow-subtle space-y-1">
             <span className="text-[11px] font-bold uppercase tracking-wider text-[#71717A]">
               Gross Sales
@@ -893,6 +875,16 @@ export default function SellerDashboardPage() {
             </p>
             <p className="text-[10px] text-emerald-700 font-medium">
               Direct settlement to bank
+            </p>
+          </div>
+
+          <div className="bg-[#FFFFFF] rounded-2xl border border-[#E5E5E0] p-4 sm:p-5 shadow-subtle space-y-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#71717A]">
+              Stall Followers
+            </span>
+            <p className="text-xl sm:text-2xl font-black text-[#18181B]">{stallFollowers}</p>
+            <p className="text-[10px] text-[#71717A]">
+              Buyers following your craft
             </p>
           </div>
 
@@ -1340,9 +1332,9 @@ export default function SellerDashboardPage() {
                               </button>
                               <button
                                 type="button"
-                                onClick={() => {
-                                  resolveOrderDispute(order.id);
-                                  loadData();
+                                onClick={async () => {
+                                  await resolveOrderDispute(order.id);
+                                  await loadData();
                                   addToast({ title: 'Dispute Resolved', message: `Order #${order.id} dispute marked resolved.`, type: 'success' });
                                 }}
                                 className="py-1.5 px-3 rounded-lg border border-rose-300 text-rose-800 font-semibold text-[11px] hover:bg-rose-100"
@@ -1915,9 +1907,17 @@ export default function SellerDashboardPage() {
                           <>
                             <button
                               type="button"
-                              onClick={() => {
-                                updateCollabStatus(collab.id, 'accepted');
-                                setSellerCollabs(getCollabProposalsForSeller(stallId));
+                              onClick={async () => {
+                                const updated = await updateCollabStatus(collab.id, 'accepted');
+                                if (!updated) {
+                                  addToast({
+                                    title: 'Could not accept collab',
+                                    message: 'Please try again in a moment.',
+                                    type: 'error',
+                                  });
+                                  return;
+                                }
+                                setSellerCollabs(await getCollabProposalsForSeller(stallId));
                                 addToast({
                                   title: 'Collab Accepted!',
                                   message: `You accepted ${collab.influencer_name}'s partnership on ${collab.product_title}.`,
@@ -1931,9 +1931,9 @@ export default function SellerDashboardPage() {
 
                             <button
                               type="button"
-                              onClick={() => {
-                                updateCollabStatus(collab.id, 'declined');
-                                setSellerCollabs(getCollabProposalsForSeller(stallId));
+                              onClick={async () => {
+                                await updateCollabStatus(collab.id, 'declined');
+                                setSellerCollabs(await getCollabProposalsForSeller(stallId));
                                 addToast({
                                   title: 'Collab Declined',
                                   message: 'Proposal closed.',
@@ -2039,16 +2039,17 @@ export default function SellerDashboardPage() {
 
                   {/* Reply Input Form */}
                   <form
-                    onSubmit={(e) => {
+                    onSubmit={async (e) => {
                       e.preventDefault();
                       if (!sellerCollabChatInput.trim() || !activeSellerCollabChat) return;
-                      sendCollabMessage(
+                      const message = sellerCollabChatInput.trim();
+                      const sent = await sendCollabMessage(
                         activeSellerCollabChat.id,
                         'seller',
                         session?.name || stall?.artisan_name || 'Artisan Maker',
-                        sellerCollabChatInput.trim()
+                        message
                       );
-                      setSellerCollabChatInput('');
+                      if (sent) setSellerCollabChatInput('');
                     }}
                     className="pt-2 border-t-2 border-[#18181B] flex gap-2"
                   >
@@ -3369,14 +3370,14 @@ export default function SellerDashboardPage() {
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  updateB2BOrderStatus(
+                onClick={async () => {
+                  await updateB2BOrderStatus(
                     isConsignmentModalOpen.id,
                     'bulk_dispatched',
                     consignmentInput.trim()
                   );
                   setIsConsignmentModalOpen(null);
-                  loadData();
+                  await loadData();
                   addToast({
                     title: 'Consignment Dispatched!',
                     message: `Bulk tracking ${consignmentInput.trim()} synchronized with GeM / CPSE portal.`,
@@ -3399,7 +3400,9 @@ export default function SellerDashboardPage() {
           order={chatOrder}
           currentRole="seller"
           onClose={() => setChatOrder(null)}
-          onOrderUpdated={() => loadData()}
+          onOrderUpdated={async () => {
+            await loadData();
+          }}
         />
       )}
     </div>

@@ -23,7 +23,10 @@ import {
   CheckCircle2,
   ThumbsUp,
   Plus,
+  Bell,
+  BellRing,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { Stall, Product, ArtistReview } from '@/lib/types';
 import {
   getDemoStalls,
@@ -35,7 +38,12 @@ import {
 } from '@/lib/demoData';
 import { ProductCard } from '@/components/ProductCard';
 import { useToastStore } from '@/hooks/useToastStore';
-import { getUserSession, getRegisteredAccounts, UserSession } from '@/lib/userSession';
+import { getUserSession, UserSession } from '@/lib/userSession';
+import {
+  fetchStallFollowerCount,
+  isFollowingStall,
+  setStallSubscription,
+} from '@/lib/notificationService';
 
 interface StallPageProps {
   params: Promise<{
@@ -46,6 +54,7 @@ interface StallPageProps {
 export default function ArtisanStallPage({ params }: StallPageProps) {
   const resolvedParams = use(params);
   const slug = resolvedParams.slug;
+  const router = useRouter();
   const addToast = useToastStore((s) => s.addToast);
   const [session, setSession] = useState<UserSession | null>(null);
 
@@ -55,6 +64,9 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [audioSeconds, setAudioSeconds] = useState(0);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isFollowPending, setIsFollowPending] = useState(false);
+  const [stallFollowers, setStallFollowers] = useState(0);
 
   // Review Form state
   const [newReviewRating, setNewReviewRating] = useState(5);
@@ -63,18 +75,23 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
   const [newReviewName, setNewReviewName] = useState('');
 
   useEffect(() => {
-    const currSession = getUserSession();
-    setSession(currSession);
-    if (currSession?.name) {
-      setNewReviewName(currSession.name);
-    }
+    let cancelled = false;
 
-    const stalls = getDemoStalls();
-    let foundStall = stalls.find((s) => s.slug === slug || s.id === slug);
+    const loadStall = async () => {
+      const [currSession, stalls] = await Promise.all([
+        getUserSession(),
+        getDemoStalls(),
+      ]);
+      if (cancelled) return;
 
-    // 1. If stall not found in demoStalls, check active session or registered accounts
-    if (!foundStall) {
-      if (currSession && (currSession.sellerStallSlug === slug || currSession.sellerStallId === slug)) {
+      setSession(currSession);
+      if (currSession?.name) {
+        setNewReviewName(currSession.name);
+      }
+
+      let foundStall: Stall | undefined = stalls.find((s) => s.slug === slug || s.id === slug);
+
+      if (!foundStall && currSession && (currSession.sellerStallSlug === slug || currSession.sellerStallId === slug)) {
         foundStall = {
           id: currSession.sellerStallId || `stall_${slug}`,
           user_id: currSession.id,
@@ -100,73 +117,56 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
           craft_origin_history: 'Centuries of Indian indigenous handloom and craft cluster heritage.',
           created_at: new Date().toISOString(),
         };
-        saveDemoStalls([...stalls, foundStall]);
-      } else {
-        const accounts = getRegisteredAccounts();
-        const matchedAccount = accounts.find((a) => a.sellerStallSlug === slug || a.sellerStallId === slug);
-        if (matchedAccount) {
-          foundStall = {
-            id: matchedAccount.sellerStallId || `stall_${slug}`,
-            user_id: matchedAccount.id,
-            name: matchedAccount.sellerStallName || matchedAccount.name || 'Artisan Workshop',
-            slug: matchedAccount.sellerStallSlug || slug,
-            artisan_name: matchedAccount.name || 'Master Artisan',
-            location: 'Jaipur, Rajasthan',
-            state: matchedAccount.stateOrigin || 'Rajasthan',
-            odop_district: matchedAccount.craftSpecialty || 'Handloom & Craft Cluster',
-            craft_heritage: matchedAccount.craftSpecialty || 'Traditional Handcrafted Canvas & Khadi',
-            bio: `${matchedAccount.name}'s dedicated rural artisan workshop.`,
-            logo_url: matchedAccount.avatar_url || 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=300&q=80',
-            banner_url: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=1200&q=80',
-            is_verified: true,
-            is_vishwakarma_verified: true,
-            is_gi_tagged: true,
-            rating: 5.0,
-            review_count: 0,
-            sales_count: 0,
-            payout_account_id: 'acct_direct_upi',
-            payout_status: 'ready',
-            heritage_story: 'Generational master craftsperson dedicated to authentic slow fashion.',
-            craft_origin_history: 'Centuries of Indian indigenous handloom and craft cluster heritage.',
-            created_at: new Date().toISOString(),
-          };
-          saveDemoStalls([...stalls, foundStall]);
+        await saveDemoStalls([...stalls, foundStall]);
+      }
+
+      if (!foundStall) {
+        foundStall = stalls[0];
+      }
+      if (!foundStall) return;
+
+      setStall(foundStall);
+
+      const [following, followerCount] = await Promise.all([
+        isFollowingStall(foundStall.id),
+        fetchStallFollowerCount(foundStall.id),
+      ]);
+      if (cancelled) return;
+      setIsFollowing(following);
+      setStallFollowers(followerCount);
+
+      const allProducts = await getDemoProducts();
+      if (cancelled) return;
+
+      let matching = allProducts.filter(
+        (p) =>
+          p.stall_id === foundStall.id ||
+          (foundStall.slug && p.stall_slug === foundStall.slug) ||
+          p.stall_slug === slug ||
+          (p.stall_id && foundStall.id && p.stall_id.toLowerCase() === foundStall.id.toLowerCase())
+      );
+
+      if (matching.length === 0) {
+        if (foundStall.id === 'stall_1' || foundStall.slug === 'earthstitch-studio') {
+          matching = INITIAL_PRODUCTS.filter((p) => p.stall_id === 'stall_1');
+        } else if (foundStall.id === 'stall_2' || foundStall.slug === 'the-weave-knot') {
+          matching = INITIAL_PRODUCTS.filter((p) => p.stall_id === 'stall_2');
         }
       }
-    }
 
-    // 2. Fallback to first stall if not found so page never stays stuck on infinite loading
-    if (!foundStall) {
-      foundStall = stalls[0];
-    }
-
-    setStall(foundStall);
-
-    // 3. Robust Product Matching: Match by stall_id, stall_slug, or fallback to INITIAL_PRODUCTS
-    const allProducts = getDemoProducts();
-    let matching = allProducts.filter(
-      (p) =>
-        p.stall_id === foundStall.id ||
-        (foundStall.slug && p.stall_slug === foundStall.slug) ||
-        p.stall_slug === slug ||
-        (p.stall_id && foundStall.id && p.stall_id.toLowerCase() === foundStall.id.toLowerCase())
-    );
-
-    // If zero products matched and it's a default stall, pull from INITIAL_PRODUCTS
-    if (matching.length === 0) {
-      if (foundStall.id === 'stall_1' || foundStall.slug === 'earthstitch-studio') {
-        matching = INITIAL_PRODUCTS.filter((p) => p.stall_id === 'stall_1');
-      } else if (foundStall.id === 'stall_2' || foundStall.slug === 'the-weave-knot') {
-        matching = INITIAL_PRODUCTS.filter((p) => p.stall_id === 'stall_2');
+      setStallProducts(matching);
+      const loadedReviews = await getArtisanReviews(foundStall.id);
+      if (cancelled) return;
+      setReviews(loadedReviews);
+      if (matching.length > 0) {
+        setNewReviewCraft(matching[0].title);
       }
-    }
+    };
 
-    setStallProducts(matching);
-    const loadedReviews = getArtisanReviews(foundStall.id);
-    setReviews(loadedReviews);
-    if (matching.length > 0) {
-      setNewReviewCraft(matching[0].title);
-    }
+    void loadStall();
+    return () => {
+      cancelled = true;
+    };
   }, [slug]);
 
   // Audio story timer effect
@@ -200,6 +200,57 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
       title: 'Stall link copied',
       message: `Share ${stall.name} with friends.`,
       type: 'success',
+    });
+  };
+
+  const handleFollow = async () => {
+    if (!stall) return;
+
+    if (!session) {
+      addToast({
+        title: 'Sign in to follow',
+        message: 'Create a free buyer account to get restock and sale alerts.',
+        type: 'info',
+      });
+      router.push(`/login?redirect=${encodeURIComponent(`/stall/${slug}`)}`);
+      return;
+    }
+
+    if (session.sellerStallId === stall.id) {
+      addToast({
+        title: 'This is your stall',
+        message: 'You are already following your own craft.',
+        type: 'info',
+      });
+      return;
+    }
+
+    setIsFollowPending(true);
+    const next = !isFollowing;
+    setIsFollowing(next);
+    if (next) setStallFollowers((count) => count + 1);
+    else setStallFollowers((count) => Math.max(0, count - 1));
+
+    const ok = await setStallSubscription(stall.id, next);
+    setIsFollowPending(false);
+
+    if (!ok) {
+      setIsFollowing(!next);
+      setStallFollowers((count) => Math.max(0, count + (next ? -1 : 1)));
+      addToast({
+        title: 'Could not update follow',
+        message: 'Please try again in a moment.',
+        type: 'error',
+      });
+      return;
+    }
+
+    addToast({
+      title: next ? `Following ${stall.name}` : `Unfollowed ${stall.name}`,
+      message: next
+        ? 'You will be notified about restocks and artisan sales.'
+        : 'You will no longer receive stall alerts.',
+      type: next ? 'success' : 'info',
     });
   };
 
@@ -271,6 +322,28 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
 
               {/* Action Buttons */}
               <div className="flex items-center gap-2 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={handleFollow}
+                  disabled={isFollowPending}
+                  className={`flex-1 sm:flex-none py-2 px-4 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors disabled:opacity-60 ${
+                    isFollowing
+                      ? 'border border-emerald-600 bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
+                      : 'bg-[#18181B] text-white hover:bg-[#27272A]'
+                  }`}
+                >
+                  {isFollowing ? (
+                    <>
+                      <BellRing className="w-3.5 h-3.5" />
+                      <span>Following{stallFollowers > 0 ? ` • ${stallFollowers}` : ''}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Bell className="w-3.5 h-3.5" />
+                      <span>Follow Stall</span>
+                    </>
+                  )}
+                </button>
                 <button
                   type="button"
                   onClick={handleShare}
@@ -657,9 +730,9 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
             </div>
 
             <form
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
-                const newRev = addArtisanReview({
+                const newRev = await addArtisanReview({
                   stall_id: stall.id,
                   user_name: newReviewName || 'Artisan Patron',
                   buyer_name: newReviewName || 'Artisan Patron',

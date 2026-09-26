@@ -6,9 +6,11 @@
     "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "e2e": "node scripts/e2e-order-lifecycle.js"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.110.8",
     "cloudinary": "^2.11.0",
     "clsx": "^2.1.1",

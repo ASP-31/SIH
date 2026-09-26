@@ -7,6 +7,7 @@ import { CartDrawer } from "@/components/CartDrawer";
 import { QuickViewModal } from "@/components/QuickViewModal";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { ToastContainer } from "@/components/ToastContainer";
+import NotificationListener from "@/components/NotificationListener";
 
 export const metadata: Metadata = {
   title: "Tote • AI-Driven Market Linkage & Smart Cataloging for Marginalized Artisans",
@@ -56,6 +57,7 @@ export default function RootLayout({
         <QuickViewModal />
         <MobileBottomNav />
         <ToastContainer />
+        <NotificationListener />
       </body>
     </html>
   );

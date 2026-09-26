@@ -1,7 +1,7 @@
-import { OrderMessage, OrderNotification } from './types';
+import { OrderMessage } from './types';
+import { getSupabaseClient } from './supabase';
 
 const MESSAGES_KEY = 'tote_order_messages_v2';
-const NOTIFICATIONS_KEY = 'tote_notifications_v2';
 
 const INITIAL_MESSAGES: Record<string, OrderMessage[]> = {
   'TOT-84920': [
@@ -64,7 +64,7 @@ const INITIAL_MESSAGES: Record<string, OrderMessage[]> = {
     {
       id: 'msg_7',
       order_id: 'TOT-84921',
-      sender_id: 'seller_5',
+      sender_id: 'seller_1',
       sender_name: 'Liam Chen (Minimalist Bag Works)',
       sender_role: 'seller',
       message: 'Hello Tara, we are saddlery-stitching the laptop partition in our Pondicherry studio right now.',
@@ -72,27 +72,6 @@ const INITIAL_MESSAGES: Record<string, OrderMessage[]> = {
     },
   ],
 };
-
-const INITIAL_NOTIFICATIONS: OrderNotification[] = [
-  {
-    id: 'notif_1',
-    target_role: 'seller',
-    order_id: 'TOT-84921',
-    title: 'New Order Received! 🛍️',
-    message: 'Tara Mukherjee purchased "Atelier Structured Laptop Tote 16"" (₹2,850). Please prepare for dispatch.',
-    created_at: new Date(Date.now() - 3600 * 1000 * 4).toISOString(),
-    read: false,
-  },
-  {
-    id: 'notif_2',
-    target_role: 'buyer',
-    order_id: 'TOT-84920',
-    title: 'Out for Delivery! 🚚',
-    message: 'Your Indigo Horizon Canvas Tote is out for delivery with BlueDart. Please mark as received when delivered.',
-    created_at: new Date(Date.now() - 3600 * 1000 * 12).toISOString(),
-    read: false,
-  },
-];
 
 // Messages Helpers
 export function getAllOrderMessages(): Record<string, OrderMessage[]> {
@@ -114,6 +93,70 @@ export function getOrderMessages(orderId: string): OrderMessage[] {
   return all[orderId] || [];
 }
 
+export async function fetchOrderMessages(orderId: string): Promise<OrderMessage[]> {
+  const supabase = getSupabaseClient();
+  if (!supabase) return getOrderMessages(orderId);
+
+  const { data, error } = await supabase
+    .from('order_messages')
+    .select('*')
+    .eq('order_id', orderId)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching order messages:', error.message);
+    return getOrderMessages(orderId);
+  }
+
+  const rows = ((data ?? []) as Record<string, unknown>[]).map((row) => ({
+    id: String(row.id),
+    order_id: String(row.order_id),
+    sender_id: String(row.sender_id ?? 'system'),
+    sender_name: String(row.sender_name ?? 'Tote'),
+    sender_role: row.sender_role as OrderMessage['sender_role'],
+    message: String(row.message),
+    created_at: String(row.created_at),
+  }));
+
+  if (rows.length === 0) {
+    return getOrderMessages(orderId);
+  }
+
+  return rows;
+}
+
+async function persistMessage(message: OrderMessage): Promise<void> {
+  if (message.sender_role === 'system') return;
+
+  const supabase = getSupabaseClient();
+  if (!supabase) return;
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  const { data: order } = await supabase
+    .from('orders')
+    .select('id')
+    .eq('id', message.order_id)
+    .maybeSingle();
+
+  if (!order) return;
+
+  const { error } = await supabase.from('order_messages').insert({
+    order_id: message.order_id,
+    sender_id: user.id,
+    sender_name: message.sender_name,
+    sender_role: message.sender_role,
+    message: message.message,
+  });
+
+  if (error) {
+    console.error('Error persisting order message:', error.message);
+  }
+}
+
 export function sendOrderMessage(
   orderId: string,
   senderName: string,
@@ -126,7 +169,7 @@ export function sendOrderMessage(
   const newMessage: OrderMessage = {
     id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
     order_id: orderId,
-    sender_id: senderRole === 'system' ? 'system' : senderRole === 'buyer' ? 'buyer_demo' : 'seller_1',
+    sender_id: senderRole === 'system' ? 'system' : senderRole,
     sender_name: senderName,
     sender_role: senderRole,
     message: messageText,
@@ -145,70 +188,7 @@ export function sendOrderMessage(
     } catch {}
   }
 
+  void persistMessage(newMessage);
+
   return newMessage;
-}
-
-// Notifications Helpers
-export function getNotifications(role?: 'buyer' | 'seller'): OrderNotification[] {
-  if (typeof window === 'undefined') {
-    return role ? INITIAL_NOTIFICATIONS.filter((n) => n.target_role === role) : INITIAL_NOTIFICATIONS;
-  }
-  try {
-    const raw = localStorage.getItem(NOTIFICATIONS_KEY);
-    const list: OrderNotification[] = raw ? JSON.parse(raw) : INITIAL_NOTIFICATIONS;
-    if (!raw) {
-      localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(INITIAL_NOTIFICATIONS));
-    }
-    if (role) {
-      return list.filter((n) => n.target_role === role);
-    }
-    return list;
-  } catch {
-    return role ? INITIAL_NOTIFICATIONS.filter((n) => n.target_role === role) : INITIAL_NOTIFICATIONS;
-  }
-}
-
-export function addNotification(
-  notif: Omit<OrderNotification, 'id' | 'created_at' | 'read'>
-): OrderNotification {
-  const current = getNotifications();
-  const newNotif: OrderNotification = {
-    ...notif,
-    id: `notif_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-    created_at: new Date().toISOString(),
-    read: false,
-  };
-
-  const updated = [newNotif, ...current];
-  if (typeof window !== 'undefined') {
-    try {
-      localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(updated));
-      window.dispatchEvent(
-        new CustomEvent('tote_notifications_updated', { detail: newNotif })
-      );
-    } catch {}
-  }
-  return newNotif;
-}
-
-export function markNotificationAsRead(id: string): void {
-  const current = getNotifications();
-  const updated = current.map((n) => (n.id === id ? { ...n, read: true } : n));
-  if (typeof window !== 'undefined') {
-    try {
-      localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(updated));
-      window.dispatchEvent(new CustomEvent('tote_notifications_updated'));
-    } catch {}
-  }
-}
-
-export function markAllNotificationsAsRead(role?: 'buyer' | 'seller'): void {
-  const current = getNotifications();
-  const updated = current.map((n) => (role ? (n.target_role === role ? { ...n, read: true } : n) : { ...n, read: true }));
-  if (typeof window !== 'undefined') {
-    try {
-      localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(updated));
-      window.dispatchEvent(new CustomEvent('tote_notifications_updated'));
-    } catch {}
-  }
 }

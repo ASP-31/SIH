@@ -36,8 +36,8 @@ import {
   getCollabProposalsForInfluencer,
   submitCollabProposal,
   sendCollabMessage,
-  recordReferralClick,
 } from '@/lib/influencerService';
+import { recordReferralClick } from '@/lib/referralAttribution';
 import { getUserSession, UserSession } from '@/lib/userSession';
 import { useToastStore } from '@/hooks/useToastStore';
 import { useRouter } from 'next/navigation';
@@ -75,23 +75,37 @@ export default function InfluencerPage() {
   const [copiedLink, setCopiedLink] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     setMounted(true);
-    const curr = getUserSession();
-    setSession(curr);
 
-    const handle = curr?.influencerProfile?.handle?.replace('@', '').toLowerCase() || 'creator';
-    setProducts(getDemoProducts());
-    setCollabs(getCollabProposalsForInfluencer(handle));
+    const loadPageData = async () => {
+      const [currentSession, demoProducts] = await Promise.all([
+        getUserSession(),
+        getDemoProducts(),
+      ]);
+      if (cancelled) return;
 
-    const handleUpdate = () => {
-      const refreshed = getUserSession();
-      const h = refreshed?.influencerProfile?.handle?.replace('@', '').toLowerCase() || 'creator';
-      setCollabs(getCollabProposalsForInfluencer(h));
+      setSession(currentSession);
+      setProducts(demoProducts);
+
+      const handle =
+        currentSession?.influencerProfile?.handle?.replace('@', '').toLowerCase() || 'creator';
+      setCollabs(await getCollabProposalsForInfluencer(handle));
     };
+
+    const handleUpdate = async () => {
+      const refreshed = await getUserSession();
+      if (cancelled) return;
+      const h = refreshed?.influencerProfile?.handle?.replace('@', '').toLowerCase() || 'creator';
+      setCollabs(await getCollabProposalsForInfluencer(h));
+    };
+
+    void loadPageData();
 
     window.addEventListener('tote_collabs_updated', handleUpdate);
     window.addEventListener('tote_clicks_updated', handleUpdate);
     return () => {
+      cancelled = true;
       window.removeEventListener('tote_collabs_updated', handleUpdate);
       window.removeEventListener('tote_clicks_updated', handleUpdate);
     };
@@ -167,20 +181,18 @@ export default function InfluencerPage() {
     setProposedCommission(12);
   };
 
-  const handleSubmitPitch = (e: React.FormEvent) => {
+  const handleSubmitPitch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pitchProduct) return;
     setIsSubmittingPitch(true);
 
-    setTimeout(() => {
-      const newCollab = submitCollabProposal({
-        influencer_id: session?.id || 'inf_creator',
+    try {
+      await submitCollabProposal({
         influencer_name: session?.name || influencerProfile.name || 'Cultural Creator',
         influencer_handle: influencerProfile.handle,
         influencer_avatar: influencerProfile.avatar_url,
         influencer_followers: influencerProfile.followers,
         influencer_niche: influencerProfile.category,
-        seller_id: 'seller_1',
         stall_id: pitchProduct.stall_id,
         stall_name: pitchProduct.stall_name || 'Artisan Stall',
         product_id: pitchProduct.id,
@@ -200,21 +212,31 @@ export default function InfluencerPage() {
         message: `Proposal submitted to ${pitchProduct.stall_name || 'Artisan'}. Tracking link generated.`,
         type: 'success',
       });
-    }, 400);
+    } catch (error) {
+      setIsSubmittingPitch(false);
+      addToast({
+        title: 'Could not send pitch',
+        message: error instanceof Error ? error.message : 'Please try again in a moment.',
+        type: 'error',
+      });
+    }
   };
 
   // Handle in-app discussion message
-  const handleSendDiscussionMessage = (e: React.FormEvent) => {
+  const handleSendDiscussionMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeDiscussionCollab || !discussionInput.trim()) return;
 
-    sendCollabMessage(
+    const sent = await sendCollabMessage(
       activeDiscussionCollab.id,
       'influencer',
       session?.name || influencerProfile.name || 'Cultural Creator',
       discussionInput.trim()
     );
-    setDiscussionInput('');
+
+    if (sent) {
+      setDiscussionInput('');
+    }
   };
 
   // Helper to copy tracking link
@@ -230,9 +252,15 @@ export default function InfluencerPage() {
     });
   };
 
-  // Simulate a test click so user can verify real-time counter immediately
-  const handleSimulateClick = (refCode: string, productId: string) => {
-    recordReferralClick(refCode, productId);
+  // Records a test visit so the creator can verify the funnel counter immediately
+  const handleSimulateClick = async (trackingCode: string, refCode: string, productId: string) => {
+    await recordReferralClick({
+      trackingCode,
+      refCode,
+      productId: productId || null,
+    });
+
+    setCollabs(await getCollabProposalsForInfluencer(currentHandle));
     addToast({
       title: 'Reel Click Simulated!',
       message: `Recorded 1 visitor visit via @${refCode}. Portfolio & Seller counter updated.`,
@@ -523,7 +551,13 @@ export default function InfluencerPage() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleSimulateClick(currentHandle, collab.product_id)}
+                            onClick={() =>
+                              handleSimulateClick(
+                                collab.tracking_code,
+                                currentHandle,
+                                collab.product_id
+                              )
+                            }
                             className="text-[10px] px-1.5 py-0.5 bg-orange-100 hover:bg-orange-200 border border-orange-400 text-orange-900 font-bold"
                             title="Simulate 1 Visitor Click from Reel"
                           >
@@ -947,7 +981,12 @@ export default function InfluencerPage() {
               <button
                 type="button"
                 onClick={() => {
-                  handleSimulateClick(currentHandle, linkModalProduct.id);
+                  const match = collabs.find((c) => c.product_id === linkModalProduct.id);
+                  void handleSimulateClick(
+                    match?.tracking_code || currentHandle.toUpperCase().slice(0, 5),
+                    currentHandle,
+                    linkModalProduct.id
+                  );
                 }}
                 className="w-full py-2 bg-white hover:bg-amber-100 border border-[#18181B] text-xs font-bold uppercase text-orange-900 shadow-[2px_2px_0px_0px_#18181B]"
               >

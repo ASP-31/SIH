@@ -17,8 +17,34 @@ import {
   SlidersHorizontal,
 } from 'lucide-react';
 import { useCartStore } from '@/hooks/useCartStore';
+import { useNotificationStore } from '@/hooks/useNotificationStore';
 import { getUserSession, UserSession } from '@/lib/userSession';
 import { ModeSwitcherModal } from './ModeSwitcherModal';
+import { Bell } from 'lucide-react';
+
+function MobileBellLink({ active, activeClass }: { active: boolean; activeClass: string }) {
+  const unreadCount = useNotificationStore((s) => s.unreadCount);
+
+  return (
+    <Link
+      href="/notifications"
+      className={`relative flex flex-col items-center gap-0.5 py-1 px-2 rounded transition-colors ${
+        active ? activeClass : 'text-[#71717A] hover:text-[#18181B]'
+      }`}
+      aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+    >
+      <div className="relative">
+        <Bell className="w-4 h-4" />
+        {unreadCount > 0 && (
+          <span className="absolute -top-1.5 -right-2 bg-amber-500 text-black text-[9px] font-black min-w-3.5 h-3.5 px-1 rounded-full flex items-center justify-center border border-black">
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
+        )}
+      </div>
+      <span className="text-[9px] tracking-tight uppercase font-bold">Alerts</span>
+    </Link>
+  );
+}
 
 export function MobileBottomNav() {
   const pathname = usePathname();
@@ -29,11 +55,24 @@ export function MobileBottomNav() {
   const [isModeModalOpen, setIsModeModalOpen] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     setMounted(true);
-    setSession(getUserSession());
-    const handleUpdate = () => setSession(getUserSession());
+
+    const refreshSession = async () => {
+      const nextSession = await getUserSession();
+      if (!cancelled) setSession(nextSession);
+    };
+
+    const handleUpdate = () => {
+      void refreshSession();
+    };
+
+    void refreshSession();
     window.addEventListener('tote_session_changed', handleUpdate);
-    return () => window.removeEventListener('tote_session_changed', handleUpdate);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('tote_session_changed', handleUpdate);
+    };
   }, []);
 
   const isActive = (path: string) => {
@@ -88,6 +127,8 @@ export function MobileBottomNav() {
                 <span className="text-[9px] tracking-tight uppercase font-bold">Catalog</span>
               </Link>
 
+              <MobileBellLink active={isActive('/notifications')} activeClass="text-amber-700 font-black" />
+
               <button
                 type="button"
                 onClick={() => setIsModeModalOpen(true)}
@@ -135,6 +176,8 @@ export function MobileBottomNav() {
                 <Compass className="w-4 h-4" />
                 <span className="text-[9px] tracking-tight uppercase font-bold">Store</span>
               </Link>
+
+              <MobileBellLink active={isActive('/notifications')} activeClass="text-orange-600 font-black" />
 
               <button
                 type="button"
@@ -188,6 +231,8 @@ export function MobileBottomNav() {
                 <Package className="w-4 h-4" />
                 <span className="text-[9px] tracking-tight uppercase font-bold">Orders</span>
               </Link>
+
+              <MobileBellLink active={isActive('/notifications')} activeClass="text-[#EA580C] font-black" />
 
               <button
                 type="button"

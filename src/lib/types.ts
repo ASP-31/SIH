@@ -168,15 +168,67 @@ export interface OrderMessage {
   created_at: string;
 }
 
-export interface OrderNotification {
+export type NotificationCategory = 'orders' | 'messages' | 'sellers' | 'collabs' | 'referrals';
+
+export type NotificationType =
+  | 'order_placed'
+  | 'order_accepted'
+  | 'order_declined'
+  | 'payment_submitted'
+  | 'payment_verified'
+  | 'payment_failed'
+  | 'order_shipped'
+  | 'out_for_delivery'
+  | 'delivered'
+  | 'dispute_raised'
+  | 'dispute_resolved'
+  | 'chat_message'
+  | 'seller_new_product'
+  | 'collab_proposal'
+  | 'collab_accepted'
+  | 'collab_declined'
+  | 'referral_click'
+  | 'referral_order'
+  | 'referral_delivered';
+
+export interface AppNotification {
   id: string;
-  target_role: 'buyer' | 'seller';
-  order_id: string;
-  product_id?: string;
+  recipient_id: string;
+  actor_id: string | null;
+  type: NotificationType;
+  category: NotificationCategory;
   title: string;
-  message: string;
+  body: string;
+  action_url: string | null;
+  metadata: Record<string, unknown>;
+  read_at: string | null;
   created_at: string;
-  read: boolean;
+}
+
+export interface NotificationPreference {
+  user_id: string;
+  category: NotificationCategory;
+  enabled: boolean;
+  updated_at: string;
+}
+
+export interface CreatorFunnelRow {
+  collab_id: string;
+  influencer_id: string;
+  tracking_code: string | null;
+  tracking_url: string | null;
+  product_title: string | null;
+  product_image: string | null;
+  commission_pct: number | null;
+  status: CollabProposal['status'];
+  created_at: string;
+  clicks: number;
+  unique_visitors: number;
+  orders_count: number;
+  delivered_orders: number;
+  gmv: number;
+  pending_commission: number;
+  confirmed_commission: number;
 }
 
 export interface Order {
