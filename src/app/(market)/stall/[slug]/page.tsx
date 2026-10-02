@@ -188,8 +188,8 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
 
   if (!stall) {
     return (
-      <div className="min-h-screen bg-[#FAFAF8] py-16 text-center">
-        <p className="text-sm text-[#71717A]">Loading artisan workshop...</p>
+      <div className="min-h-screen bg-background py-16 text-center">
+        <p className="text-sm text-muted">Loading artisan workshop...</p>
       </div>
     );
   }
@@ -255,10 +255,10 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAF8] pb-16">
+    <div className="min-h-screen bg-background pb-16">
       {/* 1. STALL BANNER & PROFILE HEADER */}
       <div className="relative">
-        <div className="relative h-48 sm:h-64 md:h-80 w-full bg-[#F2F0EB] overflow-hidden">
+        <div className="relative h-48 sm:h-64 md:h-80 w-full bg-accent overflow-hidden">
           <Image
             src={stall.banner_url}
             alt={stall.name}
@@ -273,7 +273,7 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
         <div className="absolute top-4 left-4 sm:left-8 z-10">
           <Link
             href="/"
-            className="py-2 px-3.5 rounded-full bg-[#FFFFFF]/90 backdrop-blur-md border border-[#E5E5E0] text-xs font-semibold text-[#18181B] hover:bg-[#FFFFFF] shadow-subtle flex items-center gap-1.5 transition-all"
+            className="py-2 px-3.5 rounded-full bg-card/90 backdrop-blur-md border border-border text-xs font-semibold text-foreground hover:bg-card shadow-subtle flex items-center gap-1.5 transition-all"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Marketplace</span>
@@ -282,11 +282,11 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
 
         {/* Stall Header Container */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative -mt-16 sm:-mt-20 bg-[#FFFFFF] rounded-3xl border border-[#E5E5E0] p-5 sm:p-8 shadow-elevated">
+          <div className="relative -mt-16 sm:-mt-20 bg-card rounded-3xl border border-border p-5 sm:p-8 shadow-elevated">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-start sm:items-center gap-4">
                 {/* Stall Avatar */}
-                <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden bg-[#F2F0EB] border-2 border-[#FFFFFF] shadow-subtle shrink-0">
+                <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden bg-accent border-2 border-[#FFFFFF] shadow-subtle shrink-0">
                   <Image
                     src={stall.logo_url}
                     alt={stall.artisan_name}
@@ -298,7 +298,7 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
                 {/* Stall Titles */}
                 <div>
                   <div className="flex items-center gap-2">
-                    <h1 className="text-xl sm:text-2xl font-bold text-[#18181B] tracking-tight">
+                    <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">
                       {stall.name}
                     </h1>
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
@@ -306,7 +306,7 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
                       Verified Artisan
                     </span>
                   </div>
-                  <p className="text-xs text-[#71717A] mt-0.5 flex items-center gap-1.5">
+                  <p className="text-xs text-muted mt-0.5 flex items-center gap-1.5">
                     <span>By {stall.artisan_name}</span>
                     <span>•</span>
                     <span className="flex items-center gap-1">
@@ -314,7 +314,7 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
                       {stall.location}
                     </span>
                   </p>
-                  <p className="text-[11px] font-mono text-[#71717A] mt-1">
+                  <p className="text-[11px] font-mono text-muted mt-1">
                     tote.app/@{stall.slug}
                   </p>
                 </div>
@@ -329,7 +329,7 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
                   className={`flex-1 sm:flex-none py-2 px-4 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors disabled:opacity-60 ${
                     isFollowing
                       ? 'border border-emerald-600 bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
-                      : 'bg-[#18181B] text-white hover:bg-[#27272A]'
+                      : 'bg-foreground text-background hover:bg-[#27272A]'
                   }`}
                 >
                   {isFollowing ? (
@@ -347,7 +347,7 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
                 <button
                   type="button"
                   onClick={handleShare}
-                  className="flex-1 sm:flex-none py-2 px-4 rounded-full border border-[#E5E5E0] bg-[#FAFAF8] hover:bg-[#F2F0EB] text-xs font-semibold text-[#18181B] flex items-center justify-center gap-1.5 transition-colors"
+                  className="flex-1 sm:flex-none py-2 px-4 rounded-full border border-border bg-background hover:bg-accent text-xs font-semibold text-foreground flex items-center justify-center gap-1.5 transition-colors"
                 >
                   <Share2 className="w-3.5 h-3.5" />
                   <span>Share Stall</span>
@@ -356,30 +356,30 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
             </div>
 
             {/* Stall Story / Bio */}
-            <div className="mt-5 pt-4 border-t border-[#E5E5E0]/60 max-w-3xl">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-[#71717A] mb-1">
+            <div className="mt-5 pt-4 border-t border-border/60 max-w-3xl">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-muted mb-1">
                 Craftsmanship Story
               </h3>
-              <p className="text-xs sm:text-sm text-[#18181B] leading-relaxed">
+              <p className="text-xs sm:text-sm text-foreground leading-relaxed">
                 {stall.bio}
               </p>
             </div>
 
             {/* Stats Metrics Row */}
-            <div className="mt-5 pt-4 border-t border-[#E5E5E0]/60 grid grid-cols-3 gap-2 sm:gap-6 text-center sm:text-left">
+            <div className="mt-5 pt-4 border-t border-border/60 grid grid-cols-3 gap-2 sm:gap-6 text-center sm:text-left">
               <div>
-                <p className="font-bold text-base sm:text-lg text-[#18181B] flex items-center justify-center sm:justify-start gap-1">
+                <p className="font-bold text-base sm:text-lg text-foreground flex items-center justify-center sm:justify-start gap-1">
                   ★ {stall.rating}
                 </p>
-                <p className="text-[10px] sm:text-xs text-[#71717A]">
+                <p className="text-[10px] sm:text-xs text-muted">
                   {reviews.length > 0 ? reviews.length : stall.review_count} Artisan Reviews
                 </p>
               </div>
               <div>
-                <p className="font-bold text-base sm:text-lg text-[#18181B]">
+                <p className="font-bold text-base sm:text-lg text-foreground">
                   {stall.sales_count}+
                 </p>
-                <p className="text-[10px] sm:text-xs text-[#71717A]">
+                <p className="text-[10px] sm:text-xs text-muted">
                   Totes Delivered
                 </p>
               </div>
@@ -387,7 +387,7 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
                 <p className="font-bold text-base sm:text-lg text-emerald-700">
                   Direct Payout
                 </p>
-                <p className="text-[10px] sm:text-xs text-[#71717A]">
+                <p className="text-[10px] sm:text-xs text-muted">
                   Fair Studio Wages
                 </p>
               </div>
@@ -428,7 +428,7 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
               </p>
 
               {stall.craft_origin_history && (
-                <div className="p-4 rounded-2xl bg-white/70 border border-amber-200 text-xs text-amber-950 space-y-1">
+                <div className="p-4 rounded-2xl bg-card/70 border border-amber-200 text-xs text-amber-950 space-y-1">
                   <p className="font-bold flex items-center gap-1.5 text-amber-900">
                     <Award className="w-4 h-4 text-amber-700" />
                     Generational Technique &amp; Provenance
@@ -441,7 +441,7 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
             </div>
 
             {/* Right: Audio Narration Player & Micro-Experience */}
-            <div className="lg:col-span-5 bg-white/90 backdrop-blur-md rounded-2xl border border-amber-300/80 p-6 shadow-subtle space-y-5">
+            <div className="lg:col-span-5 bg-card/90 backdrop-blur-md rounded-2xl border border-amber-300/80 p-6 shadow-subtle space-y-5">
               <div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider text-amber-800 flex items-center gap-1.5">
@@ -452,16 +452,16 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
                     0:{audioSeconds < 10 ? `0${audioSeconds}` : audioSeconds} / 0:48
                   </span>
                 </div>
-                <h4 className="font-bold text-sm text-[#18181B] mt-1">
+                <h4 className="font-bold text-sm text-foreground mt-1">
                   Listen to Master Artisan {stall.artisan_name}
                 </h4>
-                <p className="text-[11px] text-[#71717A] mt-0.5">
+                <p className="text-[11px] text-muted mt-0.5">
                   Hear {stall.artisan_name} explain the loom setup and natural mordant dyeing.
                 </p>
               </div>
 
               {/* Animated Soundwave Equalizer */}
-              <div className="h-16 bg-[#FAFAF8] rounded-xl border border-amber-200/60 px-4 flex items-center justify-between gap-1">
+              <div className="h-16 bg-background rounded-xl border border-amber-200/60 px-4 flex items-center justify-between gap-1">
                 {[18, 35, 60, 45, 80, 50, 90, 70, 40, 85, 95, 65, 30, 75, 85, 45, 60, 30].map(
                   (height, i) => (
                     <div
@@ -486,7 +486,7 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
                 <button
                   type="button"
                   onClick={() => setIsPlayingAudio(!isPlayingAudio)}
-                  className="flex-1 py-2.5 px-4 rounded-xl bg-amber-800 hover:bg-amber-900 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all active:scale-95"
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-amber-800 hover:bg-amber-900 text-background font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all active:scale-95"
                 >
                   {isPlayingAudio ? (
                     <>
@@ -507,7 +507,7 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
                       setIsPlayingAudio(false);
                       setAudioSeconds(0);
                     }}
-                    className="p-2.5 rounded-xl border border-amber-300 bg-white hover:bg-amber-50 text-amber-900"
+                    className="p-2.5 rounded-xl border border-amber-300 bg-card hover:bg-amber-50 text-amber-900"
                     title="Stop Audio"
                   >
                     <VolumeX className="w-4 h-4" />
@@ -527,25 +527,25 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-[#18181B] tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">
               Bags by {stall.name}
             </h2>
-            <p className="text-xs text-[#71717A]">
+            <p className="text-xs text-muted">
               Dispatched directly from the workshop in {stall.location}
             </p>
           </div>
-          <span className="text-xs font-semibold text-[#71717A]">
+          <span className="text-xs font-semibold text-muted">
             {stallProducts.length} pieces
           </span>
         </div>
 
         {stallProducts.length === 0 ? (
-          <div className="bg-white border-2 border-dashed border-[#18181B] p-8 text-center space-y-3 shadow-[4px_4px_0px_0px_#18181B] font-mono">
+          <div className="bg-card border-2 border-dashed border-foreground p-8 text-center space-y-3 shadow-[4px_4px_0px_0px_#18181B] font-mono">
             <Sparkles className="w-8 h-8 text-amber-600 mx-auto" />
-            <h3 className="font-bold text-sm uppercase text-[#18181B]">
+            <h3 className="font-bold text-sm uppercase text-foreground">
               Stallfront Active
             </h3>
-            <p className="text-xs text-[#52525B] max-w-md mx-auto leading-relaxed">
+            <p className="text-xs text-muted max-w-md mx-auto leading-relaxed">
               {session?.role === 'seller'
                 ? "You haven't added any products to your catalog yet. Use the Artisan Studio or AI Voice Cataloger to list your handcrafted creations."
                 : "This artisan is currently weaving new pieces for their digital stallfront. Check back soon!"}
@@ -553,7 +553,7 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
             {session?.role === 'seller' && (
               <Link
                 href="/dashboard?tab=catalog"
-                className="inline-flex items-center gap-1.5 py-2.5 px-5 bg-[#18181B] text-white text-xs font-bold uppercase border-2 border-[#18181B] shadow-[2px_2px_0px_0px_#71717A] hover:bg-zinc-800 transition-colors"
+                className="inline-flex items-center gap-1.5 py-2.5 px-5 bg-foreground text-background text-xs font-bold uppercase border-2 border-foreground shadow-[2px_2px_0px_0px_#71717A] hover:bg-zinc-800 transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Add Products to Catalog</span>
@@ -571,17 +571,17 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
 
       {/* 4. ARTISAN REVIEWS & RATINGS SECTION */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16">
-        <div className="bg-[#FFFFFF] rounded-3xl border border-[#E5E5E0] p-6 sm:p-10 shadow-elevated space-y-8">
+        <div className="bg-card rounded-3xl border border-border p-6 sm:p-10 shadow-elevated space-y-8">
           {/* Header & Write Review Action */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E5E5E0] pb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-6">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-amber-800">
                 Collector Feedback &amp; Verification
               </span>
-              <h3 className="text-xl sm:text-2xl font-bold text-[#18181B] tracking-tight">
+              <h3 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">
                 Artisan Reviews &amp; Testimonials
               </h3>
-              <p className="text-xs text-[#71717A] mt-1">
+              <p className="text-xs text-muted mt-1">
                 Real feedback from patrons who have collected pieces from {stall.name}.
               </p>
             </div>
@@ -589,7 +589,7 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
             <button
               type="button"
               onClick={() => setIsReviewModalOpen(true)}
-              className="py-2.5 px-5 rounded-full bg-[#18181B] hover:bg-black text-white text-xs font-bold shadow-subtle flex items-center justify-center gap-2 transition-all self-start sm:self-auto"
+              className="py-2.5 px-5 rounded-full bg-foreground hover:bg-black text-background text-xs font-bold shadow-subtle flex items-center justify-center gap-2 transition-all self-start sm:self-auto"
             >
               <MessageSquare className="w-4 h-4" />
               <span>Write a Review for Artisan</span>
@@ -597,19 +597,19 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
           </div>
 
           {/* Rating Breakdown & Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center bg-[#FAFAF8] rounded-2xl p-6 border border-[#E5E5E0]">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center bg-background rounded-2xl p-6 border border-border">
             {/* Overall Rating Score */}
             <div className="md:col-span-4 text-center md:text-left space-y-1">
-              <div className="text-4xl font-extrabold text-[#18181B] tracking-tight">
+              <div className="text-4xl font-extrabold text-foreground tracking-tight">
                 {stall.rating}
-                <span className="text-lg font-normal text-[#71717A]"> / 5.0</span>
+                <span className="text-lg font-normal text-muted"> / 5.0</span>
               </div>
               <div className="flex items-center justify-center md:justify-start gap-1 text-amber-500">
                 {[...Array(5)].map((_, i) => (
                   <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
                 ))}
               </div>
-              <p className="text-xs text-[#71717A] font-medium">
+              <p className="text-xs text-muted font-medium">
                 Based on {reviews.length} verified collector evaluations
               </p>
             </div>
@@ -623,9 +623,9 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
                 { stars: 2, pct: 0 },
                 { stars: 1, pct: 0 },
               ].map((row) => (
-                <div key={row.stars} className="flex items-center gap-3 text-xs text-[#71717A]">
+                <div key={row.stars} className="flex items-center gap-3 text-xs text-muted">
                   <span className="w-12 font-medium">{row.stars} Stars</span>
-                  <div className="flex-1 h-2 bg-[#E5E5E0] rounded-full overflow-hidden">
+                  <div className="flex-1 h-2 bg-accent rounded-full overflow-hidden">
                     <div
                       className="h-full bg-amber-500 rounded-full transition-all duration-500"
                       style={{ width: `${row.pct}%` }}
@@ -640,7 +640,7 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
           {/* Reviews List */}
           <div className="space-y-4">
             {reviews.length === 0 ? (
-              <div className="py-8 text-center text-xs text-[#71717A]">
+              <div className="py-8 text-center text-xs text-muted">
                 No reviews yet. Be the first to review this artisan!
               </div>
             ) : (
@@ -648,12 +648,12 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
                 {reviews.map((rev) => (
                   <div
                     key={rev.id}
-                    className="p-5 rounded-2xl bg-[#FAFAF8] border border-[#E5E5E0] space-y-3 shadow-subtle hover:border-[#71717A]/40 transition-all"
+                    className="p-5 rounded-2xl bg-background border border-border space-y-3 shadow-subtle hover:border-muted/40 transition-all"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-xs text-[#18181B]">
+                          <span className="font-bold text-xs text-foreground">
                             {rev.user_name || rev.buyer_name}
                           </span>
                           {rev.verified_purchase && (
@@ -663,8 +663,8 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
                             </span>
                           )}
                         </div>
-                        <p className="text-[11px] text-[#71717A] mt-0.5">
-                          Acquired: <span className="font-medium text-[#18181B]">{rev.craft_purchased}</span>
+                        <p className="text-[11px] text-muted mt-0.5">
+                          Acquired: <span className="font-medium text-foreground">{rev.craft_purchased}</span>
                         </p>
                       </div>
 
@@ -682,11 +682,11 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
                       </div>
                     </div>
 
-                    <p className="text-xs text-[#18181B] leading-relaxed italic">
+                    <p className="text-xs text-foreground leading-relaxed italic">
                       &ldquo;{rev.comment}&rdquo;
                     </p>
 
-                    <div className="pt-2 border-t border-[#E5E5E0]/60 flex items-center justify-between text-[10px] text-[#71717A]">
+                    <div className="pt-2 border-t border-border/60 flex items-center justify-between text-[10px] text-muted">
                       <span>
                         {new Date(rev.created_at).toLocaleDateString('en-IN', {
                           day: 'numeric',
@@ -710,20 +710,20 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
       {/* WRITE A REVIEW MODAL */}
       {isReviewModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-[#FFFFFF] rounded-3xl border border-[#E5E5E0] shadow-2xl max-w-lg w-full overflow-hidden">
+          <div className="bg-card rounded-3xl border border-border shadow-2xl max-w-lg w-full overflow-hidden">
             <div className="p-6 bg-[#FAF6EE] border-b border-amber-200 flex items-center justify-between">
               <div>
-                <h3 className="font-bold text-[#18181B] text-base">
+                <h3 className="font-bold text-foreground text-base">
                   Write a Review for {stall.name}
                 </h3>
-                <p className="text-xs text-[#71717A]">
+                <p className="text-xs text-muted">
                   Help other patrons appreciate {stall.artisan_name}&apos;s master craftsmanship
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsReviewModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-white/80 hover:bg-white text-[#71717A] flex items-center justify-center"
+                className="w-8 h-8 rounded-full bg-card/80 hover:bg-card text-muted flex items-center justify-center"
               >
                 ✕
               </button>
@@ -753,7 +753,7 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
               className="p-6 space-y-4"
             >
               <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase text-[#71717A] tracking-wider">
+                <label className="text-xs font-bold uppercase text-muted tracking-wider">
                   Rating Stars
                 </label>
                 <div className="flex items-center gap-2">
@@ -773,14 +773,14 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
                       />
                     </button>
                   ))}
-                  <span className="text-xs font-bold text-[#18181B] ml-2">
+                  <span className="text-xs font-bold text-foreground ml-2">
                     {newReviewRating} out of 5 stars
                   </span>
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase text-[#71717A] tracking-wider">
+                <label className="text-xs font-bold uppercase text-muted tracking-wider">
                   Your Name
                 </label>
                 <input
@@ -788,13 +788,13 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
                   value={newReviewName}
                   onChange={(e) => setNewReviewName(e.target.value)}
                   placeholder="e.g. Priya Sharma"
-                  className="w-full text-xs bg-[#FAFAF8] border border-[#E5E5E0] rounded-xl px-3 py-2.5 text-[#18181B] focus:outline-none focus:border-[#18181B]"
+                  className="w-full text-xs bg-background border border-border rounded-xl px-3 py-2.5 text-foreground focus:outline-none focus:border-foreground"
                   required
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase text-[#71717A] tracking-wider">
+                <label className="text-xs font-bold uppercase text-muted tracking-wider">
                   Craft / Tote Bag Purchased
                 </label>
                 <input
@@ -802,13 +802,13 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
                   value={newReviewCraft}
                   onChange={(e) => setNewReviewCraft(e.target.value)}
                   placeholder="e.g. Kasavu Heritage Canvas Tote"
-                  className="w-full text-xs bg-[#FAFAF8] border border-[#E5E5E0] rounded-xl px-3 py-2.5 text-[#18181B] focus:outline-none focus:border-[#18181B]"
+                  className="w-full text-xs bg-background border border-border rounded-xl px-3 py-2.5 text-foreground focus:outline-none focus:border-foreground"
                   required
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase text-[#71717A] tracking-wider">
+                <label className="text-xs font-bold uppercase text-muted tracking-wider">
                   Your Artisan &amp; Quality Review
                 </label>
                 <textarea
@@ -816,7 +816,7 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
                   value={newReviewComment}
                   onChange={(e) => setNewReviewComment(e.target.value)}
                   placeholder="Share details on the texture, stitching finish, natural dye smell, and your experience with this artisan's work."
-                  className="w-full text-xs bg-[#FAFAF8] border border-[#E5E5E0] rounded-xl p-3 text-[#18181B] focus:outline-none focus:border-[#18181B] resize-none"
+                  className="w-full text-xs bg-background border border-border rounded-xl p-3 text-foreground focus:outline-none focus:border-foreground resize-none"
                   required
                 />
               </div>
@@ -825,13 +825,13 @@ export default function ArtisanStallPage({ params }: StallPageProps) {
                 <button
                   type="button"
                   onClick={() => setIsReviewModalOpen(false)}
-                  className="px-4 py-2 rounded-full border border-[#E5E5E0] text-xs font-semibold text-[#71717A] hover:bg-[#FAFAF8]"
+                  className="px-4 py-2 rounded-full border border-border text-xs font-semibold text-muted hover:bg-background"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-full bg-[#18181B] hover:bg-black text-white text-xs font-bold flex items-center gap-1.5 shadow-md"
+                  className="px-5 py-2 rounded-full bg-foreground hover:bg-black text-background text-xs font-bold flex items-center gap-1.5 shadow-md"
                 >
                   <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                   <span>Submit Review</span>

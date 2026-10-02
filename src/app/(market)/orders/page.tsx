@@ -229,15 +229,15 @@ export default function BuyerOrdersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAF8] pt-8 pb-28 sm:py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background pt-8 pb-28 sm:py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Header Title & Nav Tabs */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E5E5E0] pb-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
           <div>
             <span className="text-xs uppercase tracking-wider font-bold text-amber-800">
               Buyer Account Portal
             </span>
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#18181B] tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
               Order History & Delivery Tracker
             </h1>
           </div>
@@ -248,8 +248,8 @@ export default function BuyerOrdersPage() {
               onClick={() => setActiveTab('orders')}
               className={`py-2 px-4 rounded-full text-xs font-semibold transition-all ${
                 activeTab === 'orders'
-                  ? 'bg-[#18181B] text-white shadow-subtle'
-                  : 'bg-[#FFFFFF] border border-[#E5E5E0] text-[#71717A] hover:text-[#18181B]'
+                  ? 'bg-foreground text-background shadow-subtle'
+                  : 'bg-card border border-border text-muted hover:text-foreground'
               }`}
             >
               My Orders ({orders.length})
@@ -259,8 +259,8 @@ export default function BuyerOrdersPage() {
               onClick={() => setActiveTab('profile')}
               className={`py-2 px-4 rounded-full text-xs font-semibold transition-all ${
                 activeTab === 'profile'
-                  ? 'bg-[#18181B] text-white shadow-subtle'
-                  : 'bg-[#FFFFFF] border border-[#E5E5E0] text-[#71717A] hover:text-[#18181B]'
+                  ? 'bg-foreground text-background shadow-subtle'
+                  : 'bg-card border border-border text-muted hover:text-foreground'
               }`}
             >
               Saved Addresses & Profile
@@ -274,15 +274,15 @@ export default function BuyerOrdersPage() {
             {/* Orders List Column */}
             <div className="lg:col-span-5 space-y-4">
               {orders.length === 0 ? (
-                <div className="bg-[#FFFFFF] rounded-2xl border border-[#E5E5E0] p-8 text-center shadow-subtle space-y-3">
-                  <Package className="w-10 h-10 text-[#71717A] mx-auto" />
-                  <p className="font-semibold text-sm text-[#18181B]">No orders yet</p>
-                  <p className="text-xs text-[#71717A]">
+                <div className="bg-card rounded-2xl border border-border p-8 text-center shadow-subtle space-y-3">
+                  <Package className="w-10 h-10 text-muted mx-auto" />
+                  <p className="font-semibold text-sm text-foreground">No orders yet</p>
+                  <p className="text-xs text-muted">
                     When you purchase a tote, track its journey from the loom to your doorstep here.
                   </p>
                   <Link
                     href="/"
-                    className="inline-block mt-2 py-2 px-4 rounded-full bg-[#18181B] text-white text-xs font-semibold"
+                    className="inline-block mt-2 py-2 px-4 rounded-full bg-foreground text-background text-xs font-semibold"
                   >
                     Browse Totes
                   </Link>
@@ -297,15 +297,15 @@ export default function BuyerOrdersPage() {
                       onClick={() => setSelectedOrder(order)}
                       className={`p-4 sm:p-5 rounded-2xl border transition-all cursor-pointer shadow-subtle ${
                         isSelected
-                          ? 'bg-[#FFFFFF] border-[#18181B] shadow-elevated'
-                          : 'bg-[#FFFFFF] border-[#E5E5E0] hover:border-[#71717A]'
+                          ? 'bg-card border-foreground shadow-elevated'
+                          : 'bg-card border-border hover:border-muted'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <span className="font-mono font-bold text-xs text-[#18181B]">
+                        <span className="font-mono font-bold text-xs text-foreground">
                           #{order.id}
                         </span>
-                        <span className="text-[11px] text-[#71717A]">
+                        <span className="text-[11px] text-muted">
                           {new Date(order.created_at).toLocaleDateString('en-IN', {
                             day: 'numeric',
                             month: 'short',
@@ -316,7 +316,7 @@ export default function BuyerOrdersPage() {
 
                       <div className="flex items-center gap-3">
                         {firstItem && (
-                          <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-[#F2F0EB] shrink-0 border border-[#E5E5E0]">
+                          <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-accent shrink-0 border border-border">
                             <Image
                               src={firstItem.image_url}
                               alt={firstItem.title}
@@ -326,11 +326,11 @@ export default function BuyerOrdersPage() {
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-xs text-[#18181B] truncate">
+                          <p className="font-semibold text-xs text-foreground truncate">
                             {firstItem?.title}
                             {order.items.length > 1 && ` +${order.items.length - 1} more`}
                           </p>
-                          <p className="text-[11px] text-[#71717A] mt-0.5">
+                          <p className="text-[11px] text-muted mt-0.5">
                             {order.items.length} item{order.items.length > 1 ? 's' : ''} • {formatINR(order.total_amount)}
                           </p>
                           {order.payment_status === 'pending_verification' && (
@@ -346,9 +346,9 @@ export default function BuyerOrdersPage() {
                         </div>
                       </div>
 
-                      <div className="mt-3 pt-3 border-t border-[#E5E5E0]/60 flex items-center justify-between">
+                      <div className="mt-3 pt-3 border-t border-border/60 flex items-center justify-between">
                         {getStatusBadge(firstItem?.status || 'pending')}
-                        <span className="text-xs font-semibold text-[#18181B] flex items-center gap-1">
+                        <span className="text-xs font-semibold text-foreground flex items-center gap-1">
                           View Journey <ChevronRight className="w-3.5 h-3.5" />
                         </span>
                       </div>
@@ -361,12 +361,12 @@ export default function BuyerOrdersPage() {
             {/* Selected Order Detailed Tracking Panel */}
             <div className="lg:col-span-7">
               {selectedOrder ? (
-                <div className="bg-[#FFFFFF] rounded-3xl border border-[#E5E5E0] p-6 sm:p-8 shadow-elevated space-y-6">
+                <div className="bg-card rounded-3xl border border-border p-6 sm:p-8 shadow-elevated space-y-6">
                   {/* Order Title & Receipt Actions */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-[#E5E5E0] gap-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-border gap-3">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h2 className="text-lg font-bold text-[#18181B]">
+                        <h2 className="text-lg font-bold text-foreground">
                           Order #{selectedOrder.id}
                         </h2>
                         <span
@@ -381,7 +381,7 @@ export default function BuyerOrdersPage() {
                             : selectedOrder.payment_status}
                         </span>
                       </div>
-                      <p className="text-xs text-[#71717A] mt-0.5">
+                      <p className="text-xs text-muted mt-0.5">
                         Placed on {new Date(selectedOrder.created_at).toLocaleString('en-IN', {
                           dateStyle: 'medium',
                           timeStyle: 'short',
@@ -411,7 +411,7 @@ export default function BuyerOrdersPage() {
                       <button
                         type="button"
                         onClick={() => window.print()}
-                        className="py-1.5 px-3 rounded-xl border border-[#E5E5E0] text-xs font-semibold text-[#18181B] hover:bg-[#F2F0EB] flex items-center gap-1.5"
+                        className="py-1.5 px-3 rounded-xl border border-border text-xs font-semibold text-foreground hover:bg-accent flex items-center gap-1.5"
                       >
                         <FileText className="w-3.5 h-3.5" />
                         Receipt
@@ -479,7 +479,7 @@ export default function BuyerOrdersPage() {
                       <button
                         type="button"
                         onClick={() => setChatOrder(selectedOrder)}
-                        className="px-3 py-1.5 rounded-xl bg-rose-700 hover:bg-rose-800 text-white font-bold text-xs shrink-0 whitespace-nowrap"
+                        className="px-3 py-1.5 rounded-xl bg-rose-700 hover:bg-rose-800 text-background font-bold text-xs shrink-0 whitespace-nowrap"
                       >
                         Open Dispute Chat
                       </button>
@@ -488,7 +488,7 @@ export default function BuyerOrdersPage() {
 
                   {/* Visual Step-by-Step Delivery Tracker for each item/stall */}
                   <div className="space-y-6">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#71717A]">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-muted">
                       Dispatches from Artisans:
                     </h3>
 
@@ -497,12 +497,12 @@ export default function BuyerOrdersPage() {
                       return (
                         <div
                           key={item.id}
-                          className="bg-[#FAFAF8] rounded-2xl border border-[#E5E5E0] p-4 sm:p-5 space-y-4"
+                          className="bg-background rounded-2xl border border-border p-4 sm:p-5 space-y-4"
                         >
                           {/* Item Meta */}
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                              <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-[#FFFFFF] border border-[#E5E5E0] shrink-0">
+                              <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-card border border-border shrink-0">
                                 <Image
                                   src={item.image_url}
                                   alt={item.title}
@@ -511,11 +511,11 @@ export default function BuyerOrdersPage() {
                                 />
                               </div>
                               <div>
-                                <p className="font-bold text-xs sm:text-sm text-[#18181B]">
+                                <p className="font-bold text-xs sm:text-sm text-foreground">
                                   {item.title}
                                 </p>
-                                <p className="text-[11px] text-[#71717A]">
-                                  Artisan Workshop: <span className="font-medium text-[#18181B]">{item.stall_name}</span>
+                                <p className="text-[11px] text-muted">
+                                  Artisan Workshop: <span className="font-medium text-foreground">{item.stall_name}</span>
                                 </p>
                               </div>
                             </div>
@@ -525,24 +525,24 @@ export default function BuyerOrdersPage() {
                           {/* Step Progress Tracker Graphic */}
                           <div className="pt-2">
                             <div className="grid grid-cols-4 gap-2 text-center text-[10px] sm:text-[11px] mb-2 font-medium">
-                              <span className={step >= 1 ? 'text-[#18181B] font-bold' : 'text-[#71717A]'}>
+                              <span className={step >= 1 ? 'text-foreground font-bold' : 'text-muted'}>
                                 1. Confirmed
                               </span>
-                              <span className={step >= 2 ? 'text-[#18181B] font-bold' : 'text-[#71717A]'}>
+                              <span className={step >= 2 ? 'text-foreground font-bold' : 'text-muted'}>
                                 2. Packed
                               </span>
-                              <span className={step >= 3 ? 'text-[#18181B] font-bold' : 'text-[#71717A]'}>
+                              <span className={step >= 3 ? 'text-foreground font-bold' : 'text-muted'}>
                                 3. In Transit
                               </span>
-                              <span className={step >= 4 ? 'text-emerald-700 font-bold' : 'text-[#71717A]'}>
+                              <span className={step >= 4 ? 'text-emerald-700 font-bold' : 'text-muted'}>
                                 4. Delivered
                               </span>
                             </div>
 
                             {/* Progress bar */}
-                            <div className="w-full bg-[#E5E5E0] h-2 rounded-full overflow-hidden">
+                            <div className="w-full bg-accent h-2 rounded-full overflow-hidden">
                               <div
-                                className="bg-[#18181B] h-full rounded-full transition-all duration-700"
+                                className="bg-foreground h-full rounded-full transition-all duration-700"
                                 style={{
                                   width: `${(step / 4) * 100}%`,
                                 }}
@@ -552,13 +552,13 @@ export default function BuyerOrdersPage() {
 
                           {/* Carrier Tracking Link */}
                           {item.tracking_number && (
-                            <div className="p-3 rounded-xl bg-[#FFFFFF] border border-[#E5E5E0] flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-2">
+                            <div className="p-3 rounded-xl bg-card border border-border flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-2">
                               <div className="space-y-0.5">
-                                <p className="font-bold text-[#18181B] flex items-center gap-1.5">
+                                <p className="font-bold text-foreground flex items-center gap-1.5">
                                   <Truck className="w-4 h-4 text-blue-600" />
                                   <span>{item.carrier || 'Express Courier'}</span>
                                 </p>
-                                <p className="font-mono text-[11px] text-[#71717A]">
+                                <p className="font-mono text-[11px] text-muted">
                                   Waybill: {item.tracking_number}
                                 </p>
                               </div>
@@ -567,7 +567,7 @@ export default function BuyerOrdersPage() {
                                 href={`https://www.google.com/search?q=${encodeURIComponent(item.tracking_number)}`}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="py-1.5 px-3 rounded-lg bg-[#F2F0EB] hover:bg-[#E5E5E0] text-xs font-semibold text-[#18181B] inline-flex items-center gap-1 self-start sm:self-auto transition-colors"
+                                className="py-1.5 px-3 rounded-lg bg-accent hover:bg-accent text-xs font-semibold text-foreground inline-flex items-center gap-1 self-start sm:self-auto transition-colors"
                               >
                                 <span>Track on Carrier Website</span>
                                 <ExternalLink className="w-3 h-3" />
@@ -597,7 +597,7 @@ export default function BuyerOrdersPage() {
                                     item.title
                                   )
                                 }
-                                className="py-2.5 px-5 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-elevated flex items-center gap-1.5 transition-all active:scale-95 whitespace-nowrap"
+                                className="py-2.5 px-5 rounded-full bg-emerald-700 hover:bg-emerald-800 text-background text-xs font-bold shadow-elevated flex items-center gap-1.5 transition-all active:scale-95 whitespace-nowrap"
                               >
                                 <CheckCircle2 className="w-4 h-4" />
                                 <span>Mark as Received ✅</span>
@@ -627,30 +627,30 @@ export default function BuyerOrdersPage() {
                   </div>
 
                   {/* Shipping Address & Cost Card */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-[#E5E5E0] text-xs">
-                    <div className="p-4 rounded-2xl bg-[#FAFAF8] border border-[#E5E5E0] space-y-1">
-                      <p className="font-bold text-[#18181B] flex items-center gap-1.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-border text-xs">
+                    <div className="p-4 rounded-2xl bg-background border border-border space-y-1">
+                      <p className="font-bold text-foreground flex items-center gap-1.5">
                         <MapPin className="w-3.5 h-3.5 text-amber-700" />
                         Delivery Destination
                       </p>
-                      <p className="font-medium text-[#18181B]">{selectedOrder.shipping_address.name}</p>
-                      <p className="text-[#71717A] leading-relaxed">
+                      <p className="font-medium text-foreground">{selectedOrder.shipping_address.name}</p>
+                      <p className="text-muted leading-relaxed">
                         {selectedOrder.shipping_address.street}, {selectedOrder.shipping_address.city} - {selectedOrder.shipping_address.postalCode}
                       </p>
-                      <p className="text-[#71717A]">Phone: {selectedOrder.shipping_address.phone}</p>
+                      <p className="text-muted">Phone: {selectedOrder.shipping_address.phone}</p>
                     </div>
 
-                    <div className="p-4 rounded-2xl bg-[#FAFAF8] border border-[#E5E5E0] space-y-1">
-                      <p className="font-bold text-[#18181B]">Payment Breakdown</p>
-                      <div className="flex justify-between text-[#71717A]">
+                    <div className="p-4 rounded-2xl bg-background border border-border space-y-1">
+                      <p className="font-bold text-foreground">Payment Breakdown</p>
+                      <div className="flex justify-between text-muted">
                         <span>Bags Subtotal</span>
                         <span>{formatINR(selectedOrder.subtotal)}</span>
                       </div>
-                      <div className="flex justify-between text-[#71717A]">
+                      <div className="flex justify-between text-muted">
                         <span>Artisan Shipping</span>
                         <span>{formatINR(selectedOrder.shipping_total)}</span>
                       </div>
-                      <div className="flex justify-between font-bold text-[#18181B] pt-1 border-t border-[#E5E5E0]">
+                      <div className="flex justify-between font-bold text-foreground pt-1 border-t border-border">
                         <span>Total Paid</span>
                         <span>{formatINR(selectedOrder.total_amount)}</span>
                       </div>
@@ -661,7 +661,7 @@ export default function BuyerOrdersPage() {
                   </div>
                 </div>
               ) : (
-                <div className="bg-[#FFFFFF] rounded-2xl border border-[#E5E5E0] p-12 text-center text-[#71717A] text-xs">
+                <div className="bg-card rounded-2xl border border-border p-12 text-center text-muted text-xs">
                   Select an order on the left to inspect its live journey.
                 </div>
               )}
@@ -671,32 +671,32 @@ export default function BuyerOrdersPage() {
 
         {/* TAB 2: SAVED ADDRESSES & PROFILE SETTINGS */}
         {activeTab === 'profile' && (
-          <div className="max-w-2xl bg-[#FFFFFF] rounded-3xl border border-[#E5E5E0] p-6 sm:p-8 shadow-subtle space-y-6">
+          <div className="max-w-2xl bg-card rounded-3xl border border-border p-6 sm:p-8 shadow-subtle space-y-6">
             <div>
-              <h2 className="text-lg font-bold text-[#18181B]">Profile & Saved Addresses</h2>
-              <p className="text-xs text-[#71717A]">
+              <h2 className="text-lg font-bold text-foreground">Profile & Saved Addresses</h2>
+              <p className="text-xs text-muted">
                 Manage your shipping destinations for instant 1-click checkout on all artisan stalls.
               </p>
             </div>
 
             {!session ? (
-              <div className="p-8 text-center bg-[#FAFAF8] rounded-2xl border border-[#E5E5E0] space-y-3">
-                <User className="w-10 h-10 text-[#71717A] mx-auto" />
-                <p className="font-bold text-sm text-[#18181B]">No Buyer Account Signed In</p>
-                <p className="text-xs text-[#71717A]">
+              <div className="p-8 text-center bg-background rounded-2xl border border-border space-y-3">
+                <User className="w-10 h-10 text-muted mx-auto" />
+                <p className="font-bold text-sm text-foreground">No Buyer Account Signed In</p>
+                <p className="text-xs text-muted">
                   Sign in or create a buyer account to manage your delivery addresses and track past orders.
                 </p>
                 <Link
                   href="/login?role=buyer&redirect=/orders"
-                  className="inline-block mt-2 py-2 px-5 rounded-full bg-[#18181B] text-white text-xs font-semibold hover:bg-zinc-800 transition-colors"
+                  className="inline-block mt-2 py-2 px-5 rounded-full bg-foreground text-background text-xs font-semibold hover:bg-zinc-800 transition-colors"
                 >
                   Sign In / Create Account
                 </Link>
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="p-4 rounded-2xl bg-[#FAFAF8] border border-[#E5E5E0] flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full overflow-hidden bg-[#F2F0EB] shrink-0 relative border border-[#E5E5E0]">
+                <div className="p-4 rounded-2xl bg-background border border-border flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full overflow-hidden bg-accent shrink-0 relative border border-border">
                     <Image
                       src={session.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'}
                       alt={session.name || 'Buyer'}
@@ -705,12 +705,12 @@ export default function BuyerOrdersPage() {
                     />
                   </div>
                   <div>
-                    <h3 className="font-bold text-sm text-[#18181B]">{session.name}</h3>
-                    <p className="text-xs text-[#71717A]">{session.email} • {session.phone || 'No phone registered'}</p>
+                    <h3 className="font-bold text-sm text-foreground">{session.name}</h3>
+                    <p className="text-xs text-muted">{session.email} • {session.phone || 'No phone registered'}</p>
                   </div>
                 </div>
 
-                <h3 className="font-bold text-xs uppercase tracking-wider text-[#71717A] pt-2">
+                <h3 className="font-bold text-xs uppercase tracking-wider text-muted pt-2">
                   Saved Shipping Addresses
                 </h3>
 
@@ -718,26 +718,26 @@ export default function BuyerOrdersPage() {
                   session.addresses.map((addr) => (
                 <div
                   key={addr.id}
-                  className="p-4 rounded-2xl border border-[#E5E5E0] bg-[#FFFFFF] shadow-subtle flex items-start justify-between gap-4"
+                  className="p-4 rounded-2xl border border-border bg-card shadow-subtle flex items-start justify-between gap-4"
                 >
                   <div className="space-y-1 text-xs">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-[#18181B]">{addr.name}</span>
+                      <span className="font-bold text-foreground">{addr.name}</span>
                       {addr.isDefault && (
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                           Default
                         </span>
                       )}
                     </div>
-                    <p className="text-[#71717A] leading-relaxed">
+                    <p className="text-muted leading-relaxed">
                       {addr.street}, {addr.city}, {addr.state} - {addr.postalCode}
                     </p>
-                    <p className="text-[#71717A]">Phone: {addr.phone}</p>
+                    <p className="text-muted">Phone: {addr.phone}</p>
                   </div>
                 </div>
               ))
             ) : (
-              <p className="text-xs text-[#71717A] italic">No saved addresses on file.</p>
+              <p className="text-xs text-muted italic">No saved addresses on file.</p>
             )}
           </div>
         )}
@@ -763,21 +763,21 @@ export default function BuyerOrdersPage() {
         {/* Dispute / Issue Reporting Modal */}
         {disputeModalOrder && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-            <div className="bg-[#FFFFFF] rounded-3xl border border-[#E5E5E0] shadow-2xl max-w-lg w-full overflow-hidden">
+            <div className="bg-card rounded-3xl border border-border shadow-2xl max-w-lg w-full overflow-hidden">
               <div className="p-6 bg-rose-50/80 border-b border-rose-200 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-rose-100 border border-rose-300 flex items-center justify-center text-rose-700">
                     <AlertTriangle className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-[#18181B] text-base">Report Issue on Order #{disputeModalOrder.id}</h3>
+                    <h3 className="font-bold text-foreground text-base">Report Issue on Order #{disputeModalOrder.id}</h3>
                     <p className="text-xs text-rose-800">Direct artisan dispute &amp; quality resolution</p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setDisputeModalOrder(null)}
-                  className="w-8 h-8 rounded-full bg-white/80 hover:bg-white text-[#71717A] flex items-center justify-center"
+                  className="w-8 h-8 rounded-full bg-card/80 hover:bg-card text-muted flex items-center justify-center"
                 >
                   ✕
                 </button>
@@ -785,13 +785,13 @@ export default function BuyerOrdersPage() {
 
               <form onSubmit={handleReportDisputeSubmit} className="p-6 space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase text-[#71717A] tracking-wider">
+                  <label className="text-xs font-bold uppercase text-muted tracking-wider">
                     Select Issue Category
                   </label>
                   <select
                     value={disputeReason}
                     onChange={(e) => setDisputeReason(e.target.value)}
-                    className="w-full text-xs font-medium bg-[#FAFAF8] border border-[#E5E5E0] rounded-xl px-3 py-2.5 text-[#18181B] focus:outline-none focus:border-[#18181B]"
+                    className="w-full text-xs font-medium bg-background border border-border rounded-xl px-3 py-2.5 text-foreground focus:outline-none focus:border-foreground"
                   >
                     <option value="Damaged in transit / Torn packaging">Damaged in transit / Torn packaging</option>
                     <option value="Stitching or fabric defect">Stitching or fabric defect</option>
@@ -803,7 +803,7 @@ export default function BuyerOrdersPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase text-[#71717A] tracking-wider">
+                  <label className="text-xs font-bold uppercase text-muted tracking-wider">
                     Details &amp; Notes for Artisan
                   </label>
                   <textarea
@@ -811,7 +811,7 @@ export default function BuyerOrdersPage() {
                     value={disputeNotes}
                     onChange={(e) => setDisputeNotes(e.target.value)}
                     placeholder="Describe what you observed with the bag or parcel. The artisan will reply directly in the chat to resolve or replace it."
-                    className="w-full text-xs bg-[#FAFAF8] border border-[#E5E5E0] rounded-xl p-3 text-[#18181B] focus:outline-none focus:border-[#18181B] resize-none"
+                    className="w-full text-xs bg-background border border-border rounded-xl p-3 text-foreground focus:outline-none focus:border-foreground resize-none"
                     required
                   />
                 </div>
@@ -824,13 +824,13 @@ export default function BuyerOrdersPage() {
                   <button
                     type="button"
                     onClick={() => setDisputeModalOrder(null)}
-                    className="px-4 py-2 rounded-full border border-[#E5E5E0] text-xs font-semibold text-[#71717A] hover:bg-[#FAFAF8]"
+                    className="px-4 py-2 rounded-full border border-border text-xs font-semibold text-muted hover:bg-background"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 rounded-full bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold flex items-center gap-1.5 shadow-md"
+                    className="px-5 py-2 rounded-full bg-rose-700 hover:bg-rose-800 text-background text-xs font-bold flex items-center gap-1.5 shadow-md"
                   >
                     <Send className="w-3.5 h-3.5" />
                     <span>Submit &amp; Open Chat</span>

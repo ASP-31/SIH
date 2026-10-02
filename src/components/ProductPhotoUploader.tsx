@@ -169,9 +169,9 @@ export function ProductPhotoUploader({
           type="button"
           onClick={() => galleryInputRef.current?.click()}
           disabled={isUploading}
-          className="py-3 px-4 rounded-xl border-2 border-dashed border-[#E5E5E0] bg-[#FAFAF8] hover:bg-[#F2F0EB] text-[#18181B] font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all active:scale-95 disabled:opacity-50"
+          className="py-3 px-4 rounded-xl border-2 border-dashed border-border bg-background hover:bg-accent text-foreground font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all active:scale-95 disabled:opacity-50"
         >
-          <ImageIcon className="w-4 h-4 text-[#71717A]" />
+          <ImageIcon className="w-4 h-4 text-muted" />
           <span>Choose from Gallery</span>
         </button>
       </div>
@@ -207,12 +207,12 @@ export function ProductPhotoUploader({
 
       {/* Photo Comparison & Selection UI */}
       {previewUrl && (
-        <div className="p-3.5 rounded-2xl bg-[#FAFAF8] border border-[#E5E5E0] space-y-3">
+        <div className="p-3.5 rounded-2xl bg-background border border-border space-y-3">
           <div className="flex items-center justify-between">
-            <span className="font-bold text-xs text-[#18181B]">
+            <span className="font-bold text-xs text-foreground">
               E-Commerce Product Photography Comparison
             </span>
-            <span className="text-[10px] text-[#71717A]">
+            <span className="text-[10px] text-muted">
               Choose which version to publish
             </span>
           </div>
@@ -223,20 +223,20 @@ export function ProductPhotoUploader({
               onClick={() => handleChooseSelection('original')}
               className={`relative rounded-xl p-2 border-2 cursor-pointer transition-all ${
                 activeSelection === 'original'
-                  ? 'border-[#18181B] bg-white shadow-elevated'
-                  : 'border-[#E5E5E0] bg-white/70 hover:border-[#71717A]'
+                  ? 'border-foreground bg-card shadow-elevated'
+                  : 'border-border bg-card/70 hover:border-muted'
               }`}
             >
-              <div className="flex items-center justify-between pb-1.5 border-b border-[#E5E5E0]/60 mb-2">
-                <span className="font-bold text-[11px] text-[#18181B]">Original Photo</span>
+              <div className="flex items-center justify-between pb-1.5 border-b border-border/60 mb-2">
+                <span className="font-bold text-[11px] text-foreground">Original Photo</span>
                 {activeSelection === 'original' && (
-                  <span className="px-1.5 py-0.5 rounded-md bg-[#18181B] text-white text-[9px] font-bold flex items-center gap-0.5">
+                  <span className="px-1.5 py-0.5 rounded-md bg-foreground text-background text-[9px] font-bold flex items-center gap-0.5">
                     <Check className="w-2.5 h-2.5" /> Selected
                   </span>
                 )}
               </div>
 
-              <div className="relative w-full aspect-square rounded-lg overflow-hidden bg-[#F2F0EB]">
+              <div className="relative w-full aspect-square rounded-lg overflow-hidden bg-accent">
                 <Image
                   src={originalUrl}
                   alt="Original Photo"
@@ -246,7 +246,7 @@ export function ProductPhotoUploader({
                 />
               </div>
 
-              <div className="mt-2 text-[10px] text-[#71717A] space-y-0.5">
+              <div className="mt-2 text-[10px] text-muted space-y-0.5">
                 <p>• Raw camera capture</p>
                 <p>• Original natural lighting</p>
               </div>
@@ -259,8 +259,8 @@ export function ProductPhotoUploader({
                 }}
                 className={`w-full mt-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
                   activeSelection === 'original'
-                    ? 'bg-[#18181B] text-white'
-                    : 'bg-[#FAFAF8] text-[#71717A] hover:bg-[#F2F0EB]'
+                    ? 'bg-foreground text-background'
+                    : 'bg-background text-muted hover:bg-accent'
                 }`}
               >
                 Use Original
@@ -273,7 +273,7 @@ export function ProductPhotoUploader({
               className={`relative rounded-xl p-2 border-2 cursor-pointer transition-all ${
                 activeSelection === 'enhanced'
                   ? 'border-amber-600 bg-amber-50/40 shadow-elevated'
-                  : 'border-[#E5E5E0] bg-white/70 hover:border-amber-400'
+                  : 'border-border bg-card/70 hover:border-amber-400'
               }`}
             >
               <div className="flex items-center justify-between pb-1.5 border-b border-amber-200/60 mb-2">
@@ -322,7 +322,7 @@ export function ProductPhotoUploader({
                 className={`w-full mt-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
                   activeSelection === 'enhanced'
                     ? 'bg-amber-800 hover:bg-amber-900 text-white shadow-xs'
-                    : 'bg-[#FAFAF8] text-[#71717A] hover:bg-[#F2F0EB]'
+                    : 'bg-background text-muted hover:bg-accent'
                 }`}
               >
                 Use Enhanced

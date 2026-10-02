@@ -1,11 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import "./globals.css";
-import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
-import { CartDrawer } from "@/components/CartDrawer";
-import { QuickViewModal } from "@/components/QuickViewModal";
-import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { ToastContainer } from "@/components/ToastContainer";
 import NotificationListener from "@/components/NotificationListener";
 
@@ -19,7 +14,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#FAFAF8",
+  themeColor: "#FCFAF6",
 };
 
 export default function RootLayout({
@@ -30,7 +25,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className="h-full antialiased font-sans bg-[#FAFAF8]"
+      className="h-full antialiased font-sans bg-background text-foreground"
       suppressHydrationWarning
     >
       <Script
@@ -49,13 +44,8 @@ export default function RootLayout({
           }
         `}
       </Script>
-      <body className="min-h-full flex flex-col bg-[#FAFAF8] text-[#18181B] selection:bg-[#F2F0EB] selection:text-[#18181B]" suppressHydrationWarning>
-        <Navbar />
-        <main className="flex-1 pb-16 md:pb-0">{children}</main>
-        <Footer />
-        <CartDrawer />
-        <QuickViewModal />
-        <MobileBottomNav />
+      <body className="min-h-full flex flex-col bg-background text-foreground selection:bg-accent selection:text-foreground" suppressHydrationWarning>
+        {children}
         <ToastContainer />
         <NotificationListener />
       </body>
