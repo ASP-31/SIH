@@ -3135,7 +3135,7 @@ export default function SellerDashboardPage() {
                       type="button"
                       disabled={isAnalyzingImage}
                       onClick={handleAnalyzeImageWithVision}
-                      className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-700 via-orange-600 to-amber-700 hover:from-amber-800 hover:to-orange-700 text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 border-2 border-[#18181B] shadow-[2px_2px_0px_0px_#18181B] active:translate-x-0.5 active:translate-y-0.5 transition-all disabled:opacity-50"
+                      className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-700 via-orange-600 to-amber-700 hover:from-amber-800 hover:to-orange-700 text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 border-2 border-foreground shadow-[2px_2px_0px_0px_var(--shadow-ink)] active:translate-x-0.5 active:translate-y-0.5 transition-all disabled:opacity-50"
                     >
                       {isAnalyzingImage ? (
                         <>
@@ -3149,7 +3149,7 @@ export default function SellerDashboardPage() {
                         </>
                       )}
                     </button>
-                    <p className="text-[10px] text-[#71717A] mt-1.5 text-center">
+                    <p className="text-[10px] text-muted mt-1.5 text-center">
                       AI analyzes fabric weave, natural dyes &amp; computes fair-trade living wage automatically.
                     </p>
                   </div>
