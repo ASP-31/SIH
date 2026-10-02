@@ -154,12 +154,12 @@ export function OrderChatModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-[#FFFFFF] rounded-3xl border border-[#E5E5E0] shadow-elevated max-w-2xl w-full h-[620px] flex flex-col overflow-hidden">
+      <div className="bg-card rounded-3xl border border-border shadow-elevated max-w-2xl w-full h-[620px] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="px-5 py-4 border-b border-[#E5E5E0] bg-[#FAFAF8] flex items-center justify-between gap-3">
+        <div className="px-5 py-4 border-b border-border bg-background flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             {firstItem && (
-              <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-[#FFFFFF] border border-[#E5E5E0] shrink-0">
+              <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-card border border-border shrink-0">
                 <Image
                   src={firstItem.image_url}
                   alt={firstItem.title}
@@ -170,7 +170,7 @@ export function OrderChatModal({
             )}
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h3 className="font-bold text-sm text-[#18181B] truncate">
+                <h3 className="font-bold text-sm text-foreground truncate">
                   Order #{localOrder.id}
                 </h3>
                 <span
@@ -189,20 +189,20 @@ export function OrderChatModal({
                     : 'Crafting / Pending'}
                 </span>
               </div>
-              <p className="text-[11px] text-[#71717A] truncate">
+              <p className="text-[11px] text-muted truncate">
                 {firstItem?.title} • {formatINR(localOrder.total_amount)}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="hidden sm:inline-flex text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-[#F2F0EB] text-[#18181B]">
+            <span className="hidden sm:inline-flex text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-accent text-foreground">
               You: {currentRole === 'buyer' ? 'Buyer' : 'Artisan'}
             </span>
             <button
               type="button"
               onClick={onClose}
-              className="p-2 rounded-full hover:bg-[#E5E5E0] text-[#71717A] hover:text-[#18181B] transition-colors"
+              className="p-2 rounded-full hover:bg-accent text-muted hover:text-foreground transition-colors"
               aria-label="Close conversation"
             >
               <X className="w-5 h-5" />
@@ -211,13 +211,13 @@ export function OrderChatModal({
         </div>
 
         {/* Action Status Bar (Lifecycle Shortcuts) */}
-        <div className="px-5 py-2.5 bg-[#FFFFFF] border-b border-[#E5E5E0] flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div className="px-5 py-2.5 bg-card border-b border-border flex flex-wrap items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2">
-            <span className="text-[11px] text-[#71717A]">
+            <span className="text-[11px] text-muted">
               {currentRole === 'seller' ? (
-                <>Connected with buyer: <strong className="text-[#18181B]">{localOrder.buyer_name}</strong></>
+                <>Connected with buyer: <strong className="text-foreground">{localOrder.buyer_name}</strong></>
               ) : (
-                <>Connected with artisan: <strong className="text-[#18181B]">{firstItem?.stall_name || 'Maker'}</strong></>
+                <>Connected with artisan: <strong className="text-foreground">{firstItem?.stall_name || 'Maker'}</strong></>
               )}
             </span>
           </div>
@@ -256,9 +256,9 @@ export function OrderChatModal({
         </div>
 
         {/* Message Feed */}
-        <div className="flex-1 p-5 overflow-y-auto space-y-3 bg-[#FAFAF8]">
+        <div className="flex-1 p-5 overflow-y-auto space-y-3 bg-background">
           {messages.length === 0 ? (
-            <div className="text-center py-12 text-xs text-[#71717A]">
+            <div className="text-center py-12 text-xs text-muted">
               <p>No messages in this order yet. Send a message to coordinate delivery!</p>
             </div>
           ) : (
@@ -266,7 +266,7 @@ export function OrderChatModal({
               if (msg.sender_role === 'system') {
                 return (
                   <div key={msg.id} className="flex justify-center my-2">
-                    <div className="max-w-md px-3.5 py-1.5 rounded-full bg-[#FFFFFF] border border-[#E5E5E0] text-[11px] text-[#71717A] text-center shadow-subtle flex items-center gap-1.5 font-medium">
+                    <div className="max-w-md px-3.5 py-1.5 rounded-full bg-card border border-border text-[11px] text-muted text-center shadow-subtle flex items-center gap-1.5 font-medium">
                       <span>{msg.message}</span>
                     </div>
                   </div>
@@ -282,7 +282,7 @@ export function OrderChatModal({
                   key={msg.id}
                   className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}
                 >
-                  <span className="text-[10px] text-[#71717A] mb-0.5 px-1">
+                  <span className="text-[10px] text-muted mb-0.5 px-1">
                     {msg.sender_name} •{' '}
                     {new Date(msg.created_at).toLocaleTimeString([], {
                       hour: '2-digit',
@@ -292,8 +292,8 @@ export function OrderChatModal({
                   <div
                     className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-xs leading-relaxed shadow-subtle ${
                       isMine
-                        ? 'bg-[#18181B] text-white rounded-br-none'
-                        : 'bg-[#FFFFFF] border border-[#E5E5E0] text-[#18181B] rounded-bl-none'
+                        ? 'bg-foreground text-background rounded-br-none'
+                        : 'bg-card border border-border text-foreground rounded-bl-none'
                     }`}
                   >
                     {msg.message}
@@ -308,7 +308,7 @@ export function OrderChatModal({
         {/* Message Input Footer */}
         <form
           onSubmit={handleSendMessage}
-          className="p-3 sm:p-4 bg-[#FFFFFF] border-t border-[#E5E5E0] flex items-center gap-2"
+          className="p-3 sm:p-4 bg-card border-t border-border flex items-center gap-2"
         >
           <input
             type="text"
@@ -319,12 +319,12 @@ export function OrderChatModal({
                 ? 'Message artisan about loom craft, delivery...'
                 : 'Message buyer with packing/dispatch updates...'
             }
-            className="flex-1 py-2.5 px-4 rounded-full bg-[#FAFAF8] border border-[#E5E5E0] text-xs text-[#18181B] focus:outline-none focus:ring-1 focus:ring-[#18181B] placeholder-[#71717A]"
+            className="flex-1 py-2.5 px-4 rounded-full bg-background border border-border text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-[var(--ring)] placeholder:text-muted"
           />
           <button
             type="submit"
             disabled={!inputMessage.trim()}
-            className="p-2.5 rounded-full bg-[#18181B] text-white disabled:bg-[#E5E5E0] disabled:text-[#71717A] transition-colors"
+            className="p-2.5 rounded-full bg-foreground text-background disabled:bg-border disabled:text-muted transition-colors"
             aria-label="Send message"
           >
             <Send className="w-4 h-4" />

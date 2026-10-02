@@ -1,26 +1,27 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
+  Bell,
   Compass,
-  ShoppingBag,
-  Package,
-  Store,
-  Video,
-  Layers,
-  Share2,
   FileSpreadsheet,
-  TrendingUp,
+  Layers,
   MessageSquare,
+  Package,
+  Share2,
+  ShoppingBag,
   SlidersHorizontal,
+  Store,
+  TrendingUp,
+  Video,
 } from 'lucide-react';
 import { useCartStore } from '@/hooks/useCartStore';
-import { useNotificationStore } from '@/hooks/useNotificationStore';
 import { getUserSession, UserSession } from '@/lib/userSession';
-import { ModeSwitcherModal } from './ModeSwitcherModal';
-import { Bell } from 'lucide-react';
+import { ModeSwitcherModal } from '@/components/ModeSwitcherModal';
+import { useNotificationStore } from '@/hooks/useNotificationStore';
+import { NavPersona } from './navConfig';
 
 function MobileBellLink({ active, activeClass }: { active: boolean; activeClass: string }) {
   const unreadCount = useNotificationStore((s) => s.unreadCount);
@@ -29,7 +30,7 @@ function MobileBellLink({ active, activeClass }: { active: boolean; activeClass:
     <Link
       href="/notifications"
       className={`relative flex flex-col items-center gap-0.5 py-1 px-2 rounded transition-colors ${
-        active ? activeClass : 'text-[#71717A] hover:text-[#18181B]'
+        active ? activeClass : 'text-muted hover:text-foreground'
       }`}
       aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
     >
@@ -46,7 +47,7 @@ function MobileBellLink({ active, activeClass }: { active: boolean; activeClass:
   );
 }
 
-export function MobileBottomNav() {
+export function PersonaBottomNav({ persona }: { persona: NavPersona }) {
   const pathname = usePathname();
   const totalItems = useCartStore((s) => s.getTotalItems());
   const setCartOpen = useCartStore((s) => s.setCartOpen);
@@ -56,11 +57,12 @@ export function MobileBottomNav() {
 
   useEffect(() => {
     let cancelled = false;
-    setMounted(true);
 
     const refreshSession = async () => {
       const nextSession = await getUserSession();
-      if (!cancelled) setSession(nextSession);
+      if (cancelled) return;
+      setSession(nextSession);
+      setMounted(true);
     };
 
     const handleUpdate = () => {
@@ -81,22 +83,19 @@ export function MobileBottomNav() {
     return false;
   };
 
-  const isInfluencer = session?.role === 'influencer';
-  const isSeller = session?.role === 'seller';
-
   return (
     <>
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#FCFAF6]/98 backdrop-blur-md border-t-2 border-[#18181B] px-2 py-1.5 pb-safe shadow-[0_-4px_16px_rgba(24,24,27,0.08)] font-mono">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/98 backdrop-blur-md border-t-2 border-border px-2 py-1.5 pb-safe shadow-[0_-4px_16px_rgba(24,24,27,0.08)] font-mono">
         <div className="flex items-center justify-around max-w-md mx-auto">
-          {/* 1. SELLER MODE MOBILE NAVIGATION */}
-          {isSeller ? (
+          {persona === 'seller' ? (
             <>
+              {/* 1. SELLER MODE MOBILE NAVIGATION */}
               <Link
                 href="/dashboard"
                 className={`flex flex-col items-center gap-0.5 py-1 px-2 rounded transition-colors ${
                   pathname === '/dashboard' && !pathname?.includes('tab=')
                     ? 'text-amber-700 font-black'
-                    : 'text-[#71717A] hover:text-[#18181B]'
+                    : 'text-muted hover:text-foreground'
                 }`}
               >
                 <Layers className="w-4 h-4" />
@@ -105,7 +104,7 @@ export function MobileBottomNav() {
 
               <Link
                 href="/dashboard?tab=collabs"
-                className="flex flex-col items-center gap-0.5 py-1 px-2 rounded text-[#71717A] hover:text-[#18181B] transition-colors"
+                className="flex flex-col items-center gap-0.5 py-1 px-2 rounded text-muted hover:text-foreground transition-colors"
               >
                 <Share2 className="w-4 h-4 text-orange-600" />
                 <span className="text-[9px] tracking-tight uppercase font-bold">Collabs</span>
@@ -113,7 +112,7 @@ export function MobileBottomNav() {
 
               <Link
                 href="/dashboard?tab=b2b_hub"
-                className="flex flex-col items-center gap-0.5 py-1 px-2 rounded text-[#71717A] hover:text-[#18181B] transition-colors"
+                className="flex flex-col items-center gap-0.5 py-1 px-2 rounded text-muted hover:text-foreground transition-colors"
               >
                 <FileSpreadsheet className="w-4 h-4" />
                 <span className="text-[9px] tracking-tight uppercase font-bold">GeM/B2B</span>
@@ -121,7 +120,7 @@ export function MobileBottomNav() {
 
               <Link
                 href="/dashboard?tab=catalog"
-                className="flex flex-col items-center gap-0.5 py-1 px-2 rounded text-[#71717A] hover:text-[#18181B] transition-colors"
+                className="flex flex-col items-center gap-0.5 py-1 px-2 rounded text-muted hover:text-foreground transition-colors"
               >
                 <Store className="w-4 h-4" />
                 <span className="text-[9px] tracking-tight uppercase font-bold">Catalog</span>
@@ -138,15 +137,15 @@ export function MobileBottomNav() {
                 <span className="text-[9px] tracking-tight uppercase font-black">Mode</span>
               </button>
             </>
-          ) : isInfluencer ? (
-            /* 2. INFLUENCER MODE MOBILE NAVIGATION */
+          ) : persona === 'creator' ? (
             <>
+              {/* 2. INFLUENCER MODE MOBILE NAVIGATION */}
               <Link
                 href="/influencer"
                 className={`flex flex-col items-center gap-0.5 py-1 px-2 rounded transition-colors ${
                   pathname === '/influencer'
                     ? 'text-orange-600 font-black'
-                    : 'text-[#71717A] hover:text-orange-600'
+                    : 'text-muted hover:text-orange-600'
                 }`}
               >
                 <Video className="w-4 h-4" />
@@ -155,7 +154,7 @@ export function MobileBottomNav() {
 
               <Link
                 href="/influencer#creator-portfolio"
-                className="flex flex-col items-center gap-0.5 py-1 px-2 rounded text-[#71717A] hover:text-[#18181B] transition-colors"
+                className="flex flex-col items-center gap-0.5 py-1 px-2 rounded text-muted hover:text-foreground transition-colors"
               >
                 <TrendingUp className="w-4 h-4 text-emerald-600" />
                 <span className="text-[9px] tracking-tight uppercase font-bold">Reel Links</span>
@@ -163,7 +162,7 @@ export function MobileBottomNav() {
 
               <Link
                 href="/influencer#collabs-channel"
-                className="flex flex-col items-center gap-0.5 py-1 px-2 rounded text-[#71717A] hover:text-[#18181B] transition-colors"
+                className="flex flex-col items-center gap-0.5 py-1 px-2 rounded text-muted hover:text-foreground transition-colors"
               >
                 <MessageSquare className="w-4 h-4 text-amber-600" />
                 <span className="text-[9px] tracking-tight uppercase font-bold">Chats</span>
@@ -171,7 +170,7 @@ export function MobileBottomNav() {
 
               <Link
                 href="/"
-                className="flex flex-col items-center gap-0.5 py-1 px-2 rounded text-[#71717A] hover:text-[#18181B] transition-colors"
+                className="flex flex-col items-center gap-0.5 py-1 px-2 rounded text-muted hover:text-foreground transition-colors"
               >
                 <Compass className="w-4 h-4" />
                 <span className="text-[9px] tracking-tight uppercase font-bold">Store</span>
@@ -189,14 +188,14 @@ export function MobileBottomNav() {
               </button>
             </>
           ) : (
-            /* 3. BUYER MODE MOBILE NAVIGATION */
             <>
+              {/* 3. BUYER MODE MOBILE NAVIGATION */}
               <Link
                 href="/"
                 className={`flex flex-col items-center gap-0.5 py-1 px-2 rounded transition-colors ${
                   isActive('/') && !pathname?.startsWith('/orders')
                     ? 'text-[#EA580C] font-black'
-                    : 'text-[#71717A] hover:text-[#18181B]'
+                    : 'text-muted hover:text-foreground'
                 }`}
               >
                 <Compass className="w-4 h-4" />
@@ -206,7 +205,7 @@ export function MobileBottomNav() {
               <button
                 type="button"
                 onClick={() => setCartOpen(true)}
-                className="relative flex flex-col items-center gap-0.5 py-1 px-2 rounded text-[#71717A] hover:text-[#18181B] transition-colors"
+                className="relative flex flex-col items-center gap-0.5 py-1 px-2 rounded text-muted hover:text-foreground transition-colors"
                 aria-label="Open Shopping Bag"
               >
                 <div className="relative">
@@ -225,7 +224,7 @@ export function MobileBottomNav() {
                 className={`flex flex-col items-center gap-0.5 py-1 px-2 rounded transition-colors ${
                   isActive('/orders')
                     ? 'text-[#EA580C] font-black'
-                    : 'text-[#71717A] hover:text-[#18181B]'
+                    : 'text-muted hover:text-foreground'
                 }`}
               >
                 <Package className="w-4 h-4" />

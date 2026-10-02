@@ -287,15 +287,15 @@ export function VoiceInputButton({
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
         <div className="flex items-center gap-1.5">
           <Globe className="w-3.5 h-3.5 text-amber-800" />
-          <span className="font-semibold text-[#71717A] text-[11px]">Speak in:</span>
+          <span className="font-semibold text-muted text-[11px]">Speak in:</span>
           <select
             value={selectedLang}
             onChange={(e) => setSelectedLang(e.target.value as SupportedLanguage)}
             disabled={isRecording || isTranscribing}
-            className="bg-[#FAFAF8] border border-[#E5E5E0] text-[#18181B] rounded-lg px-2 py-1 text-[11px] font-semibold focus:outline-none focus:border-[#18181B]"
+            className="bg-background border border-border text-foreground rounded-lg px-2 py-1 text-[11px] font-semibold focus:outline-none focus:border-foreground"
           >
             {LANGUAGES.map((l) => (
-              <option key={l.code} value={l.code}>
+              <option key={l.code} value={l.code} className="bg-card text-foreground">
                 {l.nativeName} ({l.label})
               </option>
             ))}
@@ -335,7 +335,7 @@ export function VoiceInputButton({
               <button
                 type="button"
                 onClick={cancelRecording}
-                className="p-1 rounded-lg text-[#71717A] hover:bg-[#F2F0EB] transition-colors"
+                className="p-1 rounded-lg text-muted hover:bg-accent transition-colors"
                 title="Cancel Recording"
               >
                 <Trash2 className="w-3.5 h-3.5" />
